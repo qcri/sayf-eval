@@ -1,0 +1,30 @@
+# Local vendored deps (login-node fallback when pip is blocked)
+.deps/
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+env/
+
+# Env / secrets
+.env
+
+# Eval outputs
+outputs/
+results/
+*.jsonl.tmp
+
+# Tooling
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.ipynb_checkpoints/
+
+# OS
+.DS_Store

@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "seceval-harness"
+version = "0.1.0"
+description = "Lightweight, model-agnostic cybersecurity LLM benchmark framework (LiteLLM transport, lighteval-shaped structure)."
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "MIT" }
+dependencies = [
+    "litellm>=1.50",
+    "datasets>=2.18",
+    "cvss>=3.0",
+    "pydantic>=2.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+]
+
+[project.scripts]
+seceval = "seceval.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["seceval*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
