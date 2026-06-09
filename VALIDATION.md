@@ -8,7 +8,7 @@ in [PLAN.md](PLAN.md).
 | Tier | What it proves | Cost | Status |
 |------|----------------|------|--------|
 | 0. Static | package imports/compiles; every task_type resolves a judge prompt; unit logic correct | none | ✅ |
-| 1. Prompt-construction parity | new loaders reproduce the **exact** prompt + ground truth the original collectors produced | CPU + HF download, no API | ✅ (see below) |
+| 1. Prompt-construction parity | new loaders reproduce the **exact** prompt + ground truth the original collectors produced | CPU + HF download, no API | ✅ **23/23 byte-for-byte** (job 311039) |
 | 2. Scoring-code parity | judge prompt + verdict parsing + metrics are byte-for-byte the original logic | none | ✅ (ported verbatim; unit-tested) |
 | 3. Live end-to-end | the real LiteLLM round-trip works for API **and** local vLLM, model = judge type | API + GPU | ✅ |
 | 4. Judge-agreement parity | on identical responses, the new scorer and the original judge agree (same judge model) | API | ⏳ optional |
@@ -38,6 +38,13 @@ sbatch slurm/parity_prompts.sh           # writes a per-task match report
 Pass = prompts and ground truth match per index. Known intentional divergences
 are declared in the script (e.g. SecEval folds the original chat-style 1-shot
 into prompt text; CISSP needs `SECEVAL_CISSP_PATH` so it is skipped).
+
+**Authoritative result (job 311039).** The committed `outputs_test_5samples` is
+partially stale (generated across older repo revisions), so the definitive check
+is `tests/parity_vs_current.py` (`slurm/parity_vs_current.sh`): it runs the
+*current* original collectors with generation stubbed and diffs all 23 tasks.
+**PASS — prompt 5/5 + gt 5/5 for every prompt-comparable task** (SecEval gt-only
+by design); i.e. the new loaders reproduce the original prompts byte-for-byte.
 
 ## Tier 2 — Scoring-code parity (static)
 
