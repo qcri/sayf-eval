@@ -120,7 +120,7 @@ seceval-harness/
 - [x] 24 tasks registered; all 9 task_types resolve a judge prompt; 29/29 unit tests pass; package compiles
 - [x] Live broad-coverage smoke (job 311015, `cpu-all`, Azure gpt-5.4): all 14 representative tasks across every loader family (HF MCQ/structured, SECURE, SecBench, RedSage, CyberMetric, MMLU-CS 5-shot, AthenaBench JSONL incl. 5-option CKT, TSV) loaded real data and scored end-to-end — correct denominators, structured metrics live (ATE micro-F1, VSP MAD). `RESULT: PASS`.
 - [x] Parity check vs original harness — **prompt-construction parity PASS, 23/23 byte-for-byte** (job 311039, `tests/parity_vs_current.py`): new loaders reproduce the current original collectors' exact prompt + ground truth for every task (SecEval gt-only by design; CISSP needs a path). See VALIDATION.md.
-- [ ] (Optional) Tier-4 judge-agreement parity: same responses through both scoring pipelines + same judge model → per-sample verdict agreement number.
+- [x] Tier-4 judge-agreement parity (job 311053, `tests/judge_agreement.py`): 360 samples × 24 tasks, same gpt-5.4 judge → **verdict-agreement 100.0% (360/360), κ=1.0**, per-task acc delta 0.000. (prompt-identity 83.3%; the 4 list-choice tasks render choices more cleanly but grade identically.) See VALIDATION.md.
 
 ## Verification
 

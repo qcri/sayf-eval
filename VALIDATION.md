@@ -11,7 +11,7 @@ in [PLAN.md](PLAN.md).
 | 1. Prompt-construction parity | new loaders reproduce the **exact** prompt + ground truth the original collectors produced | CPU + HF download, no API | ✅ **23/23 byte-for-byte** (job 311039) |
 | 2. Scoring-code parity | judge prompt + verdict parsing + metrics are byte-for-byte the original logic | none | ✅ (ported verbatim; unit-tested) |
 | 3. Live end-to-end | the real LiteLLM round-trip works for API **and** local vLLM, model = judge type | API + GPU | ✅ |
-| 4. Judge-agreement parity | on identical responses, the new scorer and the original judge agree (same judge model) | API | ⏳ optional |
+| 4. Judge-agreement parity | on identical responses, the new scorer and the original judge agree (same judge model) | API | ✅ **100% verdict agreement, κ=1.0** (job 311053) |
 
 ## Tier 0 — Static (offline)
 
@@ -70,9 +70,23 @@ accuracy = correct/total denominator policy. Verified by Tier-0 unit tests.
 
 Feed identical model responses to both the original `run_evaluate_llm_judge.py`
 and the new scorer using the **same** judge model (Azure gpt-5.4); report
-per-sample verdict agreement and per-task accuracy delta. Since the judge prompt
-is byte-identical (Tier 2), residual disagreement reflects only LLM
-nondeterminism. Run when a definitive number is needed for the paper.
+per-sample verdict agreement and per-task accuracy delta.
+
+**Result (job 311053, `tests/judge_agreement.py`, 360 samples × 24 tasks,
+Llama-3.3-70B responses):**
+
+- **verdict-agreement = 100.0% (360/360), Cohen's κ = 1.000** — `acc_orig`
+  equals `acc_new` for every task.
+- prompt-identity = 83.3% (300/360). The 60 non-identical prompts are confined
+  to 4 tasks (`mmlu-cs`, `secbench`, `secure_cwet`, `secure_maet`) and stem from
+  one cosmetic difference: the original embeds a choices **list**'s `repr()` in
+  the judge prompt, while the new `format_choices` joins it into clean lines.
+  This changed **zero** verdicts (those tasks still agree 15/15) — a readability
+  improvement with no behavioral impact.
+
+Conclusion: identical inputs (Tier 1, 23/23 byte-for-byte) + identical grading
+(Tier 4, 360/360) ⇒ the framework is behaviorally equivalent to the original
+harness.
 
 ## Environment notes (cluster)
 
