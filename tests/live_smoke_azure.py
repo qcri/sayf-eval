@@ -56,6 +56,9 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--samples", type=int, default=3)
     ap.add_argument("--tasks", nargs="+", default=["mcq", "seceval"])
+    ap.add_argument("--max-tokens", type=int, default=4096,
+                    help="Budget override; generous so the reasoning judge/model "
+                         "isn't starved (this is a loader/pipeline smoke).")
     args = ap.parse_args()
 
     model = make_azure_model()
@@ -66,8 +69,12 @@ def main() -> int:
     tasks = [get_task(t) for t in args.tasks]
 
     out = tempfile.mkdtemp(prefix="seceval_azure_smoke_")
-    print(f">> running tasks={args.tasks} samples={args.samples} -> {out}")
-    summary = run_tasks(tasks, model, scorer, out, RunConfig(max_samples=args.samples))
+    print(f">> running tasks={args.tasks} samples={args.samples} "
+          f"max_tokens={args.max_tokens} -> {out}")
+    summary = run_tasks(
+        tasks, model, scorer, out,
+        RunConfig(max_samples=args.samples, max_tokens=args.max_tokens),
+    )
 
     print(">> summary.json:")
     print(json.dumps(summary, indent=2))

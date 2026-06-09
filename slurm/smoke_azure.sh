@@ -41,7 +41,10 @@ echo ">> pytest"
 "$PY" -m pytest tests/ -q || echo "WARN: pytest reported failures"
 
 echo ">> live Azure smoke"
-"$PY" tests/live_smoke_azure.py --samples 3 --tasks mcq seceval
+# Override with: sbatch --export=ALL,TASKS="mcq rcm ...",SAMPLES=2 slurm/smoke_azure.sh
+TASKS="${TASKS:-mcq seceval}"
+SAMPLES="${SAMPLES:-3}"
+"$PY" tests/live_smoke_azure.py --samples "$SAMPLES" --tasks $TASKS
 
 echo "Done: $(date)"
 echo "============================================================"

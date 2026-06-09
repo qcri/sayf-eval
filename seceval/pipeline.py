@@ -33,6 +33,8 @@ class RunConfig:
     max_samples: int | None = None
     answer_stop: list[str] | None = None   # post-think stop applied before judging
     overwrite: bool = False
+    max_tokens: int | None = None          # override per-task budget (e.g. scale up
+                                           # for thinking models that emit reasoning)
 
 
 def _messages(task: Task, sample: Sample) -> list[dict]:
@@ -70,7 +72,7 @@ def run_inference(
         return out_path
 
     samples = task.load(config.max_samples)
-    params = GenParams(max_tokens=task.max_tokens)
+    params = GenParams(max_tokens=config.max_tokens or task.max_tokens)
     batch = [_messages(task, s) for s in samples]
     responses = model.generate_batch(batch, params)
 

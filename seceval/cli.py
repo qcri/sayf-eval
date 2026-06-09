@@ -67,6 +67,11 @@ def _add_common(p: argparse.ArgumentParser) -> None:
         "--answer-stop", nargs="*", default=None,
         help="Post-think stop sequence(s) applied to the answer before judging.",
     )
+    p.add_argument(
+        "--max-tokens", type=int, default=None,
+        help="Override the per-task generation budget (e.g. scale up for "
+             "thinking models that emit reasoning before the answer).",
+    )
 
 
 def _add_model_args(p: argparse.ArgumentParser) -> None:
@@ -106,6 +111,7 @@ def main(argv: list[str] | None = None) -> int:
         max_samples=args.max_samples,
         answer_stop=args.answer_stop,
         overwrite=args.overwrite,
+        max_tokens=args.max_tokens,
     )
 
     if args.cmd == "run-inference":
