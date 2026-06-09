@@ -104,13 +104,14 @@ For reasoning models, pass `--answer-stop` to apply a stop sequence to the answe
 
 ## Tasks
 
-24 cybersecurity sub-tasks across 8 benchmark families (`sayf-eval run --tasks …`):
+25 cybersecurity sub-tasks across 9 benchmark families (`sayf-eval run --tasks …`):
 
 - **CTI-Bench:** `mcq`, `rcm`, `vsp`, `ate`, `cti_taa`
 - **AthenaBench:** `ckt`, `rms`, `taa`, `athena_ate`, `athena_rcm`, `athena_vsp`
 - **SECURE:** `secure_maet`, `secure_cwet`, `secure_kcv`
 - **RedSage:** `redsage_frameworks`, `redsage_generals`, `redsage_skills`, `redsage_cli`, `redsage_kali`
 - **Other MCQ:** `seceval`, `cybermetric`, `secbench`, `mmlu-cs`, `cissp`
+- **SEvenLLM:** `sevenllm` (open-ended structured CTI extraction / analysis, judged semantically)
 
 `cissp` needs a dataset path via `SAYF_EVAL_CISSP_PATH` (not a public dataset);
 all others load from HuggingFace / GitHub on first run.

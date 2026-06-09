@@ -18,6 +18,7 @@ import csv
 import io
 import json
 import os
+import re
 import urllib.request
 from collections.abc import Callable
 
@@ -359,6 +360,59 @@ def load_cissp() -> list[Sample]:
                 target=gt,
                 choices=_choices_to_list(choices),
                 metadata={"task_type": "mcq", "domain": q.get("domain", "")},
+            )
+        )
+    return samples
+
+
+# -- SEvenLLM-Bench (English subset, open-ended structured CTI extraction) ----
+
+# Stanford-Alpaca-style instruction/input wrapper SEvenLLM was fine-tuned on.
+# Only the plain variant is used: model-specific chat tokens are added by the
+# serving backend's chat template, not baked into the prompt text.
+_SEVENLLM_TEMPLATE = (
+    "Below is an instruction that describes a task, paired with an input that "
+    "provides further context. Write a response that appropriately completes the "
+    "request.\n\n### Instruction:\n{instruction}\n\n### Input:\n{input}\n\n### Response:"
+)
+# CJK Unified Ideographs — used to keep the English half of the bilingual set.
+_CHINESE_CHAR_RE = re.compile(r"[一-鿿]")
+
+
+def _is_non_chinese(text: str) -> bool:
+    return not bool(_CHINESE_CHAR_RE.search(text or ""))
+
+
+def load_sevenllm() -> list[Sample]:
+    """SEvenLLM-Bench English subset (open-ended CTI extraction / analysis).
+
+    Bilingual benchmark (650 EN + 650 ZH); we keep the non-Chinese inputs so the
+    judge runs a single English prompt. The HF auto-loader trips on this dataset
+    (mixed output types per row), so download ``test.jsonl`` directly.
+    """
+    from huggingface_hub import hf_hub_download
+
+    path = hf_hub_download(
+        repo_id="Multilingual-Multimodal-NLP/SEVENLLM-Dataset",
+        filename="test.jsonl",
+        repo_type="dataset",
+    )
+    with open(path, encoding="utf-8") as f:
+        rows = [json.loads(line) for line in f if line.strip()]
+    rows = [r for r in rows if _is_non_chinese(r.get("input", ""))]
+
+    samples: list[Sample] = []
+    for idx, r in enumerate(rows):
+        instruction = r.get("instruction", "")
+        input_text = r.get("input", "")
+        gt = r.get("output", "")
+        target = json.dumps(gt, ensure_ascii=False) if isinstance(gt, (dict, list)) else str(gt)
+        samples.append(
+            Sample(
+                index=idx,
+                prompt=_SEVENLLM_TEMPLATE.format(instruction=instruction, input=input_text),
+                target=target,
+                metadata={"task_type": "sevenllm", "category": r.get("category", "unknown")},
             )
         )
     return samples

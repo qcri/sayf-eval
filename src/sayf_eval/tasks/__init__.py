@@ -77,3 +77,7 @@ _reg("seceval", "seceval", ds.load_seceval, _SECEVAL, 256)
 _reg("cybermetric", "mcq", ds.load_cybermetric, _CYBERMETRIC, 256)
 _reg("mmlu-cs", "mcq", ds.load_mmlu_cs, None, 512)
 _reg("cissp", "mcq", ds.load_cissp, None, 1024)
+
+# ── SEvenLLM (open-ended structured CTI extraction / analysis) ────────────────
+# Judged semantically; open-ended JSON/text outputs need a larger budget.
+_reg("sevenllm", "sevenllm", ds.load_sevenllm, None, 2000)
