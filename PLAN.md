@@ -118,7 +118,8 @@ seceval-harness/
 - [x] Port remaining MCQ-family tasks (`cybermetric`, `cissp`, `mmlu-cs`, `secbench`, `secure_*`, `redsage_*`, `ckt`) — via `make_hf_loader` / dedicated loaders
 - [x] Port remaining structured tasks (`rcm`/`athena_rcm`, `ate`/`athena_ate`, `rms`, `athena_vsp`, `cti_taa`) — via `make_hf_loader` / `make_athena_loader`
 - [x] 24 tasks registered; all 9 task_types resolve a judge prompt; 29/29 unit tests pass; package compiles
-- [ ] Parity check vs original harness on a fixed sample set (accuracy within tolerance) — run on a compute node (needs deps + dataset network)
+- [x] Live broad-coverage smoke (job 311015, `cpu-all`, Azure gpt-5.4): all 14 representative tasks across every loader family (HF MCQ/structured, SECURE, SecBench, RedSage, CyberMetric, MMLU-CS 5-shot, AthenaBench JSONL incl. 5-option CKT, TSV) loaded real data and scored end-to-end — correct denominators, structured metrics live (ATE micro-F1, VSP MAD). `RESULT: PASS`.
+- [ ] Parity check vs original harness on a fixed sample set (accuracy within tolerance) — optional; run both harnesses with the same judge on a compute node.
 
 ## Verification
 
