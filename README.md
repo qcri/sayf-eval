@@ -125,6 +125,39 @@ to the answer only; and **denominator = all attempted items** (unparseable/empty
 answers are incorrect; only judge-API failures are excluded — from both
 numerator and denominator).
 
+## Results & leaderboard
+
+Every `sayf-eval run` writes a canonical **results record** to
+`<output-dir>/results/<model>/results_<ts>.json`. Because scores are
+pipeline-dependent, the record embeds the **full pipeline configuration**
+(decoding params, token-budget policy, `<think>` handling, denominator policy,
+judge model) next to the per-task metrics — so entries are comparable by
+construction, not bare numbers.
+
+Optionally push to a HuggingFace dataset (`pip install 'sayf-eval[hub]'`):
+
+```bash
+sayf-eval run --tasks mcq vsp --model openai/gpt-4o --judge openai/gpt-4o \
+  --output-dir outputs/gpt4o \
+  --results-org my-org --push-scores      # private dataset by default
+```
+
+**Security posture (this is a cybersecurity benchmark):**
+
+| What | Flag | Visibility |
+|------|------|-----------|
+| Scores record (metrics + pipeline config, **no item text**) | `--push-scores` | private; `--public` to publish |
+| Per-sample details (prompt / gold / response) | `--push-details` | **always private** (benchmark-leakage / dual-use) |
+
+Nothing is pushed without an explicit flag. The scores artifact never contains
+prompt or answer text, so it is safe to make public; details stay private
+regardless of `--public`.
+
+> **Roadmap — community leaderboard:** Level 1 (above) is the results export.
+> Level 2 will emit HuggingFace *Community-Evals* `.eval_results` YAML and a
+> benchmark dataset repo so scores aggregate into a rendered leaderboard — opt-in,
+> and gated behind a deliberate public-disclosure policy for security tasks.
+
 ## Development
 
 ```bash

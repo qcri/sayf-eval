@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import sys
 
 from sayf_eval.model import GenParams, Model
@@ -89,6 +90,54 @@ def _add_judge_args(p: argparse.ArgumentParser) -> None:
     p.add_argument("--judge-max-tokens", type=int, default=512)
 
 
+def _add_push_args(p: argparse.ArgumentParser) -> None:
+    p.add_argument("--results-org", default=None, help="HF org/user to push results to.")
+    p.add_argument(
+        "--push-scores",
+        action="store_true",
+        help="Push the scores record (metrics + pipeline config, no item text) to the Hub.",
+    )
+    p.add_argument(
+        "--push-details",
+        action="store_true",
+        help="Also push per-sample details (prompt/gold/response) — ALWAYS to a private repo.",
+    )
+    p.add_argument(
+        "--public",
+        action="store_true",
+        help="Make the scores repo public (details stay private regardless).",
+    )
+    p.add_argument("--hf-token", default=None, help="HF token (else uses $HF_TOKEN).")
+
+
+def _export_results(args, summary: dict) -> None:
+    """Build + save the canonical scores record, then push if requested."""
+    from sayf_eval.results import build_record, push_details, push_scores, save_record
+
+    record = build_record(
+        summary,
+        model=args.model,
+        judge=args.judge,
+        gen_params=GenParams(),
+        model_base_url=args.base_url,
+        judge_base_url=args.judge_base_url or args.base_url,
+        max_tokens_override=args.max_tokens,
+        answer_stop=args.answer_stop,
+    )
+    path = save_record(record, args.output_dir)
+    print(f"results record → {path}")
+
+    if args.push_scores or args.push_details:
+        if not args.results_org:
+            sys.exit("--results-org is required to push to the Hub.")
+    if args.push_scores:
+        repo = push_scores(record, args.results_org, public=args.public, token=args.hf_token)
+        print(f"scores → {'public' if args.public else 'private'} dataset {repo}")
+    if args.push_details:
+        repo = push_details(args.output_dir, args.results_org, args.model, token=args.hf_token)
+        print(f"details → private dataset {repo}")
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="sayf-eval")
     sub = parser.add_subparsers(dest="cmd", required=True)
@@ -105,6 +154,7 @@ def main(argv: list[str] | None = None) -> int:
     _add_common(p_run)
     _add_model_args(p_run)
     _add_judge_args(p_run)
+    _add_push_args(p_run)
 
     args = parser.parse_args(argv)
     _import_tasks()
@@ -127,8 +177,6 @@ def main(argv: list[str] | None = None) -> int:
         scorer = _build_scorer(args)
         summary = {}
         for task in tasks:
-            import os
-
             responses_path = os.path.join(args.output_dir, f"{task.name}_responses.jsonl")
             summary[task.name] = run_judge(task, responses_path, scorer, args.output_dir, cfg)
             print(f"{task.name}: {summary[task.name]}")
@@ -141,6 +189,7 @@ def main(argv: list[str] | None = None) -> int:
         scorer = _build_scorer(args)
         summary = run_tasks(tasks, model, scorer, args.output_dir, cfg)
         print(json.dumps(summary, indent=2))
+        _export_results(args, summary)
         return 0
 
     return 1
