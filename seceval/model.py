@@ -101,10 +101,16 @@ class Model:
         retry_sleep: float = 1.0,
         retry_multiplier: float = 2.0,
         timeout: float | None = 120.0,
+        api_version: str | None = None,
+        extra: dict | None = None,
     ) -> None:
         self.model = model
         self.base_url = base_url
         self.api_key = api_key
+        # api_version is required by Azure OpenAI; extra passes any additional
+        # provider-specific completion kwargs straight through to LiteLLM.
+        self.api_version = api_version
+        self.extra = extra or {}
         self.concurrency = concurrency
         self.num_retries = num_retries
         self.retry_sleep = retry_sleep
@@ -130,7 +136,9 @@ class Model:
             "base_url": self.base_url,
             "api_key": self.api_key,
             "timeout": self.timeout,
+            **({"api_version": self.api_version} if self.api_version else {}),
             **params.to_litellm_kwargs(),
+            **self.extra,
         }
 
         last_err: Exception | None = None
