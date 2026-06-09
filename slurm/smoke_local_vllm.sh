@@ -19,6 +19,14 @@ set -uo pipefail
 #      reached purely through LiteLLM via base_url (no API keys, no Azure quirks)
 # Validates: pip install in a real env, litellm import, the OpenAI-compatible
 # local transport, judge-as-Model, full pipeline, real dataset load + metrics.
+#
+# NOTE: the env's torch/vLLM needs GPU compute capability sm_70+. The gpu-short
+# partition may assign Tesla P100 (sm_60), which fails engine init. Submit
+# excluding the P100 nodes so the scheduler picks a V100/T4/A16/A100:
+#   sbatch --partition=gpu-all \
+#     --exclude=crimv3mgpu003,crimv3mgpu021,crimv3mgpu022,crimv3mgpu023,crimv3srv040,crimv3srv041,crimv3srv042,crimv3srv047 \
+#     slurm/smoke_local_vllm.sh
+# (Validated PASS on gpu-all / A16, job 311007.)
 
 ROOT=/export/home/aberriche/BenchBench/seceval-harness
 MODEL_HF=Qwen/Qwen2.5-0.5B-Instruct
