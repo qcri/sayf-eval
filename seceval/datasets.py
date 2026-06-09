@@ -5,13 +5,21 @@ Each loader normalizes a benchmark's raw rows into :class:`~seceval.task.Sample`
 ported from the original ``collect_*`` functions so task semantics are unchanged.
 Loaders are lazy (called only when a task runs), so importing the registry does
 not trigger downloads.
+
+Most tasks come from two factories — :func:`make_hf_loader` (RISys-Lab HF mirror:
+CTI MCQ/RCM/VSP/ATE, SECURE, SecBench, RedSage) and :func:`make_athena_loader`
+(AthenaBench GitHub JSONL) — plus dedicated loaders for the few benchmarks with
+bespoke prompt formats (SecEval, MMLU-CS 5-shot, CyberMetric, CISSP, CTI-TAA TSV).
 """
 
 from __future__ import annotations
 
 import csv
 import io
+import json
+import os
 import urllib.request
+from typing import Callable
 
 from seceval.task import Sample
 
@@ -20,6 +28,11 @@ _MCQ_INSTRUCTION = (
     "You are given multiple choice questions. Answer with the option letter "
     "(A, B, C, D) from the given choices directly."
 )
+_MCQ_INSTRUCTION_SECBENCH = (
+    "You are given multiple choice questions. Answer with the option letter "
+    "from the given choices directly."
+)
+_LETTERS = ["A", "B", "C", "D", "E"]
 
 
 def _http_get(url: str, timeout: float = 60.0) -> bytes:
@@ -27,75 +40,129 @@ def _http_get(url: str, timeout: float = 60.0) -> bytes:
         return r.read()
 
 
-def _render_mcq(question: str, choices) -> tuple[str, list[str] | None]:
-    """Build an MCQ prompt body + a normalized choices list for the judge."""
-    prompt = _MCQ_INSTRUCTION + "\n\nQuestion: " + question + "\n"
-    rendered: list[str] = []
+def _choices_to_list(choices) -> list[str] | None:
+    """Normalize a choices field (dict or list) to letter-prefixed lines."""
+    if not choices:
+        return None
     if isinstance(choices, dict):
-        for key in ["A", "B", "C", "D"]:
-            if key in choices:
-                prompt += f"{key}. {choices[key]}\n"
-                rendered.append(f"{key}. {choices[key]}")
-    elif isinstance(choices, list):
-        letters = ["A", "B", "C", "D"]
-        for i, opt in enumerate(choices[:4]):
-            prompt += f"{letters[i]}. {opt}\n"
-            rendered.append(f"{letters[i]}. {opt}")
-    prompt += "Answer:"
-    return prompt, (rendered or None)
+        out = []
+        for key in _LETTERS:
+            if key in choices and str(choices[key]).strip():
+                out.append(f"{key}. {choices[key]}")
+        # fall back to whatever keys exist if not A–E
+        if not out:
+            out = [f"{k}. {v}" for k, v in sorted(choices.items())]
+        return out or None
+    if isinstance(choices, list):
+        return [f"{_LETTERS[i]}. {opt}" for i, opt in enumerate(choices[:5])]
+    return None
 
 
-# -- CTI-Bench MCQ (RISys-Lab HF) -------------------------------------------
+def _normalize_gt(row: dict) -> str:
+    """Ground-truth normalization: GT/solution, else answer/label (int→letter)."""
+    gt = row.get("GT") or row.get("solution")
+    if gt:
+        return str(gt).strip()
+    val = row.get("answer")
+    if val is None:
+        val = row.get("label")
+    if val is None:
+        return ""
+    if isinstance(val, int):
+        return _LETTERS[val] if 0 <= val < len(_LETTERS) else str(val)
+    return str(val).strip()
 
-def load_cti_mcq() -> list[Sample]:
-    from datasets import load_dataset
 
-    ds = load_dataset("RISys-Lab/Benchmarks_CyberSec_CTI-Bench", "cti-mcq", split="test")
-    samples: list[Sample] = []
-    for idx, row in enumerate(ds):
-        question = row.get("Prompt") or row.get("prompt") or row.get("question")
-        if not question:
-            continue
-        gt = row.get("GT") or row.get("solution") or row.get("answer") or ""
-        choices = row.get("answers") or row.get("choices") or row.get("options")
-        if choices:
-            prompt, rendered = _render_mcq(question, choices)
-        else:
-            prompt, rendered = question, None
-        samples.append(
-            Sample(
-                index=idx,
-                prompt=prompt,
-                target=str(gt).strip(),
-                choices=rendered,
-                metadata={"task_type": "mcq", "subset": "cti-mcq"},
+def _render_mcq(instruction: str, question: str, choices_list: list[str]) -> str:
+    body = instruction + "\n\nQuestion: " + question + "\n"
+    body += "\n".join(choices_list) + "\n"
+    body += "Answer:"
+    return body
+
+
+# -- factory: RISys-Lab HuggingFace benchmarks ------------------------------
+
+def make_hf_loader(
+    name: str, dataset_name: str, subset: str, task_type: str
+) -> Callable[[], list[Sample]]:
+    """Loader for RISys-Lab HF benchmarks (CTI MCQ/RCM/VSP/ATE, SECURE, SecBench,
+    RedSage). MCQ-family rows with choices get instruction + scaffolding; SECURE
+    and the structured CTI tasks (RCM/VSP/ATE) use the prebuilt ``Prompt`` as-is.
+    """
+    is_secure = name.startswith("secure_")
+    instruction = _MCQ_INSTRUCTION_SECBENCH if name == "secbench" else _MCQ_INSTRUCTION
+
+    def loader() -> list[Sample]:
+        from datasets import load_dataset
+
+        ds = load_dataset(dataset_name, subset, split="test")
+        samples: list[Sample] = []
+        for idx, row in enumerate(ds):
+            question = row.get("Prompt") or row.get("prompt") or row.get("question")
+            if not question:
+                continue
+            gt = _normalize_gt(row)
+            choices_list = _choices_to_list(
+                row.get("answers") or row.get("choices") or row.get("options")
             )
-        )
-    return samples
-
-
-# -- CTI-Bench VSP (RISys-Lab HF) -------------------------------------------
-
-def load_cti_vsp() -> list[Sample]:
-    from datasets import load_dataset
-
-    ds = load_dataset("RISys-Lab/Benchmarks_CyberSec_CTI-Bench", "cti-vsp", split="test")
-    samples: list[Sample] = []
-    for idx, row in enumerate(ds):
-        # VSP prompts are already fully formatted by the benchmark.
-        question = row.get("Prompt") or row.get("prompt") or row.get("question")
-        if not question:
-            continue
-        gt = row.get("GT") or row.get("solution") or ""
-        samples.append(
-            Sample(
-                index=idx,
-                prompt=question,
-                target=str(gt).strip(),
-                metadata={"task_type": "vsp", "subset": "cti-vsp"},
+            # Build the MCQ prompt only when choices exist and the benchmark
+            # didn't already ship a fully-formatted Prompt (SECURE / structured).
+            if choices_list and not is_secure:
+                prompt = _render_mcq(instruction, question, choices_list)
+            else:
+                prompt = question
+            samples.append(
+                Sample(
+                    index=idx,
+                    prompt=prompt,
+                    target=gt,
+                    choices=choices_list,
+                    metadata={"task_type": task_type, "subset": subset},
+                )
             )
-        )
-    return samples
+        return samples
+
+    return loader
+
+
+# -- factory: AthenaBench GitHub JSONL --------------------------------------
+
+def make_athena_loader(url: str, task_type: str) -> Callable[[], list[Sample]]:
+    """Loader for AthenaBench JSONL tasks (CKT, RMS, TAA, ATE, RCM, VSP).
+
+    The ``prompt`` field is already fully formatted; CKT carries ``option_a..e``.
+    """
+
+    def loader() -> list[Sample]:
+        text = _http_get(url).decode("utf-8")
+        samples: list[Sample] = []
+        idx = 0
+        for line in text.splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            row = json.loads(line)
+            question = row.get("question", "")
+            prompt = row.get("prompt", question)
+            gt = str(row.get("answer", row.get("correct_answer", ""))).strip()
+            choices = None
+            if "option_a" in row:
+                choices = _choices_to_list(
+                    {L: row.get(f"option_{L.lower()}", "") for L in _LETTERS}
+                )
+            samples.append(
+                Sample(
+                    index=idx,
+                    prompt=prompt,
+                    target=gt,
+                    choices=choices,
+                    metadata={"task_type": task_type, "source": url},
+                )
+            )
+            idx += 1
+        return samples
+
+    return loader
 
 
 # -- SecEval (XuanwuAI JSON) -------------------------------------------------
@@ -113,8 +180,6 @@ _SECEVAL_FEWSHOT = (
 
 
 def load_seceval() -> list[Sample]:
-    import json
-
     url = "https://huggingface.co/datasets/XuanwuAI/SecEval/resolve/main/questions.json"
     questions = json.loads(_http_get(url).decode("utf-8"))
     samples: list[Sample] = []
@@ -157,6 +222,148 @@ def load_cti_taa() -> list[Sample]:
                 prompt=prompt,
                 target=target,
                 metadata={"task_type": "taa", "subset": "cti-taa"},
+            )
+        )
+    return samples
+
+
+# -- MMLU computer_security (official 5-shot) -------------------------------
+
+def load_mmlu_cs() -> list[Sample]:
+    from datasets import load_dataset
+
+    dev = load_dataset("lighteval/mmlu", "computer_security", split="dev")
+    test = load_dataset("lighteval/mmlu", "computer_security", split="test")
+    header = (
+        "The following are multiple choice questions (with answers) about "
+        "computer security.\n\n"
+    )
+
+    def fmt(sample, include_answer: bool) -> str:
+        choices = sample.get("choices", [])
+        ans = sample.get("answer")
+        text = sample.get("question", "").strip() + "\n"
+        for i, opt in enumerate(choices[:4]):
+            text += f"{_LETTERS[i]}. {opt}\n"
+        text += "Answer:"
+        if include_answer and ans is not None:
+            text += f" {_LETTERS[ans] if isinstance(ans, int) else ans}"
+        return text
+
+    prefix = header + "".join(fmt(s, True) + "\n\n" for s in dev)
+
+    samples: list[Sample] = []
+    for idx, s in enumerate(test):
+        choices = s.get("choices", [])
+        ans = s.get("answer")
+        if not choices or ans is None:
+            continue
+        gt = _LETTERS[ans] if isinstance(ans, int) else str(ans).strip()
+        samples.append(
+            Sample(
+                index=idx,
+                prompt=prefix + fmt(s, False),
+                target=gt,
+                choices=_choices_to_list(list(choices)),
+                metadata={"task_type": "mcq", "subset": "computer_security"},
+            )
+        )
+    return samples
+
+
+# -- CyberMetric-500 ---------------------------------------------------------
+
+def load_cybermetric() -> list[Sample]:
+    from datasets import load_dataset
+
+    ds = load_dataset(
+        "RISys-Lab/Benchmarks_CyberSec_CyberMetrics", "cyberMetric_500", split="test"
+    )
+    samples: list[Sample] = []
+    for idx, row in enumerate(ds):
+        question = row.get("question", "")
+        answers = row.get("answers", {}) or row.get("choices", {}) or row.get("options", {}) or {}
+        gt = str(row.get("solution", "")).strip()
+        if not question:
+            continue
+        if isinstance(answers, list):
+            answers = {_LETTERS[i]: str(o) for i, o in enumerate(answers[:4])}
+        if not isinstance(answers, dict) or not answers:
+            continue
+        options = ", ".join(f"{k}) {v}" for k, v in answers.items())
+        prompt = (
+            f"Question: {question}\n"
+            f"Options: {options}\n\n"
+            f"Choose the correct answer (A, B, C, or D) only. "
+            f"Always return in this format: 'ANSWER: X'"
+        )
+        samples.append(
+            Sample(
+                index=idx,
+                prompt=prompt,
+                target=gt,
+                choices=_choices_to_list(answers),
+                metadata={"task_type": "mcq", "subset": "cyberMetric_500"},
+            )
+        )
+    return samples
+
+
+# -- CISSP (local/remote JSON; path via SECEVAL_CISSP_PATH) ------------------
+
+def load_cissp() -> list[Sample]:
+    path = os.environ.get("SECEVAL_CISSP_PATH")
+    if not path:
+        raise ValueError(
+            "CISSP dataset path required — set SECEVAL_CISSP_PATH to a local JSON "
+            "file or URL (the CISSP set is not a public HF dataset)."
+        )
+    if path.startswith("http"):
+        data = json.loads(_http_get(path).decode("utf-8"))
+    else:
+        with open(path) as f:
+            data = json.load(f)
+    if isinstance(data, list):
+        questions = data
+    elif isinstance(data, dict):
+        questions = data.get("questions") or data.get("items") or data.get("data") or []
+    else:
+        questions = []
+
+    samples: list[Sample] = []
+    for idx, q in enumerate(questions):
+        question = q.get("question") or q.get("Prompt") or ""
+        if not question:
+            continue
+        choices: dict = {}
+        if isinstance(q.get("answers"), dict):
+            choices = q["answers"]
+        elif isinstance(q.get("options"), list):
+            choices = {chr(65 + i): c for i, c in enumerate(q["options"][:4])}
+        elif isinstance(q.get("options"), dict):
+            choices = q["options"]
+        elif isinstance(q.get("choices"), list):
+            choices = {chr(65 + i): c for i, c in enumerate(q["choices"][:4])}
+        else:
+            choices = {L: q[L] for L in ["A", "B", "C", "D"] if L in q}
+        gt = ""
+        for key in ["solution", "answer", "GT", "correct_answer"]:
+            if key in q:
+                gt = str(q[key]).strip()
+                break
+        if not choices or not gt:
+            continue
+        prompt = f"{question}\n\n"
+        for label in sorted(choices.keys()):
+            prompt += f"{label}. {choices[label]}\n"
+        prompt += "\nAnswer with the letter only:"
+        samples.append(
+            Sample(
+                index=idx,
+                prompt=prompt,
+                target=gt,
+                choices=_choices_to_list(choices),
+                metadata={"task_type": "mcq", "domain": q.get("domain", "")},
             )
         )
     return samples

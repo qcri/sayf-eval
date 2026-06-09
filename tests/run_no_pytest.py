@@ -53,6 +53,9 @@ from seceval.metrics import (                          # noqa: E402
     calculate_vsp_mad, compute_ate_metrics, score_corpus, set_prf1,
     split_id_set, parent_only,
 )
+from seceval.datasets import (                          # noqa: E402
+    _choices_to_list, _normalize_gt, _render_mcq,
+)
 
 _results = []
 
@@ -210,6 +213,44 @@ def t_corpus_vsp():
              "ground_truth": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"}]
     r = score_corpus("vsp", rows)
     assert r["mad"] == 0.0 and r["extraction_success"] == 1
+
+
+# --- datasets (loader helpers) ---------------------------------------------
+
+def t_choices_dict_skip_empty():
+    assert _choices_to_list({"A": "x", "B": "y", "C": "z", "D": "w", "E": ""}) == [
+        "A. x", "B. y", "C. z", "D. w"]
+
+
+def t_choices_list():
+    assert _choices_to_list(["x", "y"]) == ["A. x", "B. y"]
+
+
+def t_choices_none():
+    assert _choices_to_list(None) is None and _choices_to_list({}) is None
+
+
+def t_normalize_gt():
+    assert _normalize_gt({"GT": "CWE-79", "answer": 0}) == "CWE-79"
+    assert _normalize_gt({"answer": 2}) == "C"
+    assert _normalize_gt({"label": " b "}) == "b"
+    assert _normalize_gt({}) == ""
+
+
+def t_render_mcq():
+    out = _render_mcq("INSTR", "Q?", ["A. x", "B. y"])
+    assert out.startswith("INSTR") and out.endswith("Answer:") and "A. x\nB. y" in out
+
+
+def t_registry_full_suite():
+    import seceval.tasks  # noqa: F401
+    from seceval.registry import available_tasks, get_task
+    from seceval.judge_prompts import create_judge_prompt
+    tasks = available_tasks()
+    assert len(tasks) >= 24
+    for n in tasks:
+        t = get_task(n)
+        create_judge_prompt(t.task_type, "q", "a", "g", {"choices": "A. x"})
 
 
 for _name, _fn in sorted((k, v) for k, v in dict(globals()).items() if k.startswith("t_")):

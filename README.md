@@ -82,9 +82,16 @@ answer *after* the `<think>` block is stripped (the RedSage fix).
 
 ## Tasks
 
-MVP (current): `mcq` (CTI-Bench), `seceval`, `vsp` (CVSS MAD), `taa`
-(alias-aware). The remaining ~20 CTI-Bench / AthenaBench / SECURE / RedSage /
-SecBench tasks are ported in Phase 3 (see PLAN.md).
+24 sub-tasks registered (`seceval run --tasks ...`):
+
+- **CTI-Bench:** `mcq`, `rcm`, `vsp`, `ate`, `cti_taa`
+- **AthenaBench:** `ckt`, `rms`, `taa`, `athena_ate`, `athena_rcm`, `athena_vsp`
+- **SECURE:** `secure_maet`, `secure_cwet`, `secure_kcv`
+- **RedSage:** `redsage_frameworks`, `redsage_generals`, `redsage_skills`, `redsage_cli`, `redsage_kali`
+- **Other MCQ:** `seceval`, `cybermetric`, `secbench`, `mmlu-cs`, `cissp`
+
+`cissp` needs a dataset path via the `SECEVAL_CISSP_PATH` env var (it is not a
+public HF dataset). All others load from HuggingFace / GitHub on first run.
 
 ## Standardized pipeline choices
 
