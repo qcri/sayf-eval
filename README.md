@@ -153,10 +153,29 @@ Nothing is pushed without an explicit flag. The scores artifact never contains
 prompt or answer text, so it is safe to make public; details stay private
 regardless of `--public`.
 
-> **Roadmap — community leaderboard:** Level 1 (above) is the results export.
-> Level 2 will emit HuggingFace *Community-Evals* `.eval_results` YAML and a
-> benchmark dataset repo so scores aggregate into a rendered leaderboard — opt-in,
-> and gated behind a deliberate public-disclosure policy for security tasks.
+### Community leaderboard (HF Community-Evals)
+
+Level 2 emits the two artifacts HuggingFace aggregates into a rendered
+leaderboard ([docs](https://huggingface.co/docs/hub/eval-results)) — opt-in, and
+a deliberate disclosure decision for security tasks.
+
+```bash
+# 1. Benchmark spec: register sayf-eval as a HF benchmark dataset (one
+#    sub-leaderboard per task). Writes eval.yaml; --push-to creates the dataset.
+sayf-eval benchmark-spec --out eval.yaml            # all 25 tasks
+sayf-eval benchmark-spec --push-to qcri/sayf-eval --public   # private without --public
+
+# 2. Per-model results: turn a results record into .eval_results/*.yaml and
+#    (optionally) open a community PR to the model repo so scores show on its card.
+sayf-eval eval-results --results outputs/gpt4o/results/openai__gpt-4o/results_*.json \
+  --benchmark-id qcri/sayf-eval --out .eval_results/sayf-eval.yaml \
+  --submit-pr openai/gpt-4o
+```
+
+Each `.eval_results` entry carries the pipeline config in its `notes`, so the
+public leaderboard never shows a bare number. Two one-time HF steps are required
+to go live (both noted by the CLI): the `sayf-eval` `evaluation_framework` must be
+added to HF's enum, and the benchmark dataset allow-listed (registration is beta).
 
 ## Development
 

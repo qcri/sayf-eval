@@ -41,6 +41,7 @@ dependencies = [
 [project.optional-dependencies]
 hub = [
     "huggingface_hub>=0.20",
+    "pyyaml>=6.0",
 ]
 dev = [
     "pytest>=7.0",
@@ -48,6 +49,7 @@ dev = [
     "build>=1.0",
     "twine>=5.0",
     "huggingface_hub>=0.20",
+    "pyyaml>=6.0",
 ]
 
 [project.urls]
