@@ -26,10 +26,9 @@ Style: ruff (line length 119, double quotes, isort with `sayf_eval` first-party)
 
 ## Tests
 
-`make test` runs the unit suite (`tests/test_*.py`) — no network or API keys.
-The live/parity scripts (`tests/live_smoke_azure.py`, `judge_agreement.py`,
-`parity_*.py`) need provider credentials and a cluster; they are excluded from
-CI and documented in [VALIDATION.md](VALIDATION.md).
+`make test` runs the unit suite (`tests/test_*.py`) — no network or API keys
+required. End-to-end runs against a real provider or a local vLLM server are
+driven through the `sayf-eval` CLI (see the README quick start).
 
 ## Adding a benchmark task
 

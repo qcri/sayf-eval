@@ -20,9 +20,6 @@ outputs/
 results/
 *.jsonl.tmp
 
-# SLURM job logs
-slurm/logs/
-
 # Tooling
 .pytest_cache/
 .mypy_cache/

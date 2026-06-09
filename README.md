@@ -133,9 +133,7 @@ make quality     # ruff format --check + ruff check  (CI gate)
 make test        # pytest
 ```
 
-See [VALIDATION.md](VALIDATION.md) for the end-to-end validation plan (the
-framework reproduces the reference harness byte-for-byte on inputs and 1:1 on
-judge verdicts) and [CONTRIBUTING.md](CONTRIBUTING.md) to get involved.
+See [CONTRIBUTING.md](CONTRIBUTING.md) to get involved.
 
 ## License
 

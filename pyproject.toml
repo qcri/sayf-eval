@@ -16,8 +16,8 @@ description = "A lightweight, model-agnostic framework for evaluating LLMs on cy
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
-authors = [{ name = "Sayf-Eval Authors", email = "aberriche@hbku.edu.qa" }]
-maintainers = [{ name = "Sayf-Eval Authors", email = "aberriche@hbku.edu.qa" }]
+authors = [{ name = "QCRI", email = "aberriche@hbku.edu.qa" }]
+maintainers = [{ name = "QCRI", email = "aberriche@hbku.edu.qa" }]
 keywords = ["evaluation", "llm", "cybersecurity", "benchmark", "litellm", "security"]
 classifiers = [
     "Development Status :: 4 - Beta",
@@ -75,5 +75,3 @@ indent-style = "space"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-# Only unit tests run in CI; live/parity scripts need API keys + a cluster.
-addopts = "--ignore=tests/live_smoke_azure.py --ignore=tests/judge_agreement.py --ignore=tests/parity_prompts.py --ignore=tests/parity_vs_current.py --ignore=tests/run_no_pytest.py"
