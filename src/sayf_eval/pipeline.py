@@ -20,10 +20,10 @@ import json
 import os
 from dataclasses import dataclass
 
-from seceval import metrics
-from seceval.model import GenParams, Model
-from seceval.scorer import JudgeScorer
-from seceval.task import Sample, Task
+from sayf_eval import metrics
+from sayf_eval.model import GenParams, Model
+from sayf_eval.scorer import JudgeScorer
+from sayf_eval.task import Sample, Task
 
 
 @dataclass
@@ -31,10 +31,10 @@ class RunConfig:
     """Knobs for a run."""
 
     max_samples: int | None = None
-    answer_stop: list[str] | None = None   # post-think stop applied before judging
+    answer_stop: list[str] | None = None  # post-think stop applied before judging
     overwrite: bool = False
-    max_tokens: int | None = None          # override per-task budget (e.g. scale up
-                                           # for thinking models that emit reasoning)
+    max_tokens: int | None = None  # override per-task budget (e.g. scale up
+    # for thinking models that emit reasoning)
 
 
 def _messages(task: Task, sample: Sample) -> list[dict]:
@@ -58,6 +58,7 @@ def _read_jsonl(path: str) -> list[dict]:
 
 
 # -- step 1: inference -------------------------------------------------------
+
 
 def run_inference(
     task: Task,
@@ -92,6 +93,7 @@ def run_inference(
 
 
 # -- step 2: judge -----------------------------------------------------------
+
 
 def run_judge(
     task: Task,
@@ -139,6 +141,7 @@ def run_judge(
 
 
 # -- step 3: end to end ------------------------------------------------------
+
 
 def run_task(
     task: Task,

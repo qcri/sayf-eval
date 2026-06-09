@@ -1,12 +1,10 @@
 """Dataset loader helper tests (pure, offline) + registry coverage."""
 
-from seceval.datasets import _choices_to_list, _normalize_gt, _render_mcq
+from sayf_eval.datasets import _choices_to_list, _normalize_gt, _render_mcq
 
 
 def test_choices_dict_skips_empty_and_orders_letters():
-    assert _choices_to_list({"A": "x", "B": "y", "C": "z", "D": "w", "E": ""}) == [
-        "A. x", "B. y", "C. z", "D. w"
-    ]
+    assert _choices_to_list({"A": "x", "B": "y", "C": "z", "D": "w", "E": ""}) == ["A. x", "B. y", "C. z", "D. w"]
 
 
 def test_choices_list_letter_prefixed():
@@ -19,8 +17,8 @@ def test_choices_empty_is_none():
 
 
 def test_normalize_gt_priority_and_int_to_letter():
-    assert _normalize_gt({"GT": "CWE-79", "answer": 0}) == "CWE-79"   # GT wins
-    assert _normalize_gt({"answer": 2}) == "C"                          # int -> letter
+    assert _normalize_gt({"GT": "CWE-79", "answer": 0}) == "CWE-79"  # GT wins
+    assert _normalize_gt({"answer": 2}) == "C"  # int -> letter
     assert _normalize_gt({"label": " b "}) == "b"
     assert _normalize_gt({}) == ""
 
@@ -32,9 +30,9 @@ def test_render_mcq_shape():
 
 
 def test_registry_covers_full_suite():
-    import seceval.tasks  # noqa: F401 — registers
-    from seceval.registry import available_tasks, get_task
-    from seceval.judge_prompts import create_judge_prompt
+    import sayf_eval.tasks  # noqa: F401 — registers
+    from sayf_eval.judge_prompts import create_judge_prompt
+    from sayf_eval.registry import available_tasks, get_task
 
     tasks = available_tasks()
     assert len(tasks) >= 24

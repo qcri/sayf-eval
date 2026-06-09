@@ -17,18 +17,18 @@ Unified output schema (every task)::
 
 from __future__ import annotations
 
+
 # task_type -> (format_hint, compare_rule). MCQ-family types share one entry.
 _MCQ_TYPES = ("mcq", "cybermetric", "cissp", "mmlu_cs", "secure", "secbench", "ckt")
 
 _MCQ_RULE = (
     "a single uppercase letter (A, B, C, D, or E)",
-    "Verdict is CORRECT if the extracted letter equals the correct answer "
-    "(case-insensitive). Otherwise INCORRECT.",
+    "Verdict is CORRECT if the extracted letter equals the correct answer (case-insensitive). Otherwise INCORRECT.",
 )
 
 _RULES: dict[str, tuple[str, str]] = {
     "seceval": (
-        'uppercase letters concatenated and sorted alphabetically, e.g. '
+        "uppercase letters concatenated and sorted alphabetically, e.g. "
         '"B" or "AB" or "ACD". If the model gave no clear answer, output "NONE".',
         "Verdict is CORRECT only if the extracted set of letters equals the correct "
         "set exactly (case-insensitive, order ignored). Partial matches are INCORRECT: "
@@ -54,7 +54,7 @@ _RULES: dict[str, tuple[str, str]] = {
     "ate": (
         'comma-separated sorted PARENT MITRE ATT&CK technique IDs, e.g. "T1027,T1059". '
         'IMPORTANT: strip any subtechnique suffix — "T1059.001" must become "T1059". '
-        'Output ONLY parent IDs (uppercase T followed by 4 digits, no dot). '
+        "Output ONLY parent IDs (uppercase T followed by 4 digits, no dot). "
         'If no valid technique was given, output "NONE".',
         "Verdict is CORRECT only if the extracted set of PARENT technique IDs equals the "
         "correct set of parent IDs exactly. Always strip subtechnique suffixes from BOTH "
@@ -75,8 +75,8 @@ _RULES: dict[str, tuple[str, str]] = {
         '"APT28" ≡ "Fancy Bear", "Lazarus" ≡ "Lazarus Group"). Otherwise INCORRECT.',
     ),
     "sevenllm": (
-        'a concise single-line summary (≤300 chars) of the FACTS the model extracted or '
-        'generated. For information-extraction tasks (JSON output): list the key '
+        "a concise single-line summary (≤300 chars) of the FACTS the model extracted or "
+        "generated. For information-extraction tasks (JSON output): list the key "
         'entities/values the model produced as "field: value; field: value" pairs '
         '(e.g., "Malware: Dridex; capabilities: payload drop, ransomware; evasion: '
         'password-protected Excel"). For analysis-generation tasks (text output): a '

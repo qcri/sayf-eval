@@ -18,6 +18,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 from dataclasses import dataclass, field
 
+
 logger = logging.getLogger(__name__)
 
 # Substring LiteLLM surfaces on an Azure/OpenAI content-management rejection.
@@ -154,10 +155,13 @@ class Model:
                     logger.warning("Content filtered for %s; returning empty.", self.model)
                     return Response(text="", ok=False, raw=e)
                 last_err = e
-                wait = min(64.0, self.retry_sleep * (self.retry_multiplier ** attempt))
+                wait = min(64.0, self.retry_sleep * (self.retry_multiplier**attempt))
                 logger.warning(
                     "API error (%s), retry %d/%d in %.1fs",
-                    e, attempt + 1, self.num_retries, wait,
+                    e,
+                    attempt + 1,
+                    self.num_retries,
+                    wait,
                 )
                 time.sleep(wait)
 
@@ -166,9 +170,7 @@ class Model:
 
     # -- batched calls -------------------------------------------------------
 
-    def generate_batch(
-        self, batch: list[list[dict]], params: GenParams
-    ) -> list[Response]:
+    def generate_batch(self, batch: list[list[dict]], params: GenParams) -> list[Response]:
         """Generate for many message-lists concurrently, preserving order.
 
         Mirrors lighteval's ``__call_api_parallel``: a thread pool over the

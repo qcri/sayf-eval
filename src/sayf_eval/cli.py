@@ -1,10 +1,10 @@
 """Command-line entrypoint: ``seceval {run-inference,run-judge,run}``.
 
 All three subcommands build the model-under-test and/or judge as the *same*
-:class:`~seceval.model.Model` type — local vLLM is reached by passing
+:class:`~sayf_eval.model.Model` type — local vLLM is reached by passing
 ``--model openai/<served-name> --base-url http://localhost:8000/v1``.
 
-Tasks must be registered (importing ``seceval.tasks`` triggers registration once
+Tasks must be registered (importing ``sayf_eval.tasks`` triggers registration once
 the MVP loaders land in Phase 2).
 """
 
@@ -14,15 +14,15 @@ import argparse
 import json
 import sys
 
-from seceval.model import GenParams, Model
-from seceval.pipeline import RunConfig, run_inference, run_judge, run_tasks
-from seceval.scorer import JudgeScorer
+from sayf_eval.model import GenParams, Model
+from sayf_eval.pipeline import RunConfig, run_inference, run_judge, run_tasks
+from sayf_eval.scorer import JudgeScorer
 
 
 def _import_tasks() -> None:
     """Import the task package so registrations populate the registry."""
     try:
-        import seceval.tasks  # noqa: F401
+        import sayf_eval.tasks  # noqa: F401
     except ModuleNotFoundError:
         # Tasks package not present yet (pre-Phase-2); registry stays empty.
         pass
@@ -48,12 +48,10 @@ def _build_scorer(args) -> JudgeScorer:
 
 
 def _resolve_tasks(names: list[str]):
-    from seceval.registry import available_tasks, get_task
+    from sayf_eval.registry import available_tasks, get_task
 
     if not available_tasks():
-        sys.exit(
-            "No tasks registered. (MVP task loaders arrive in Phase 2 — see PLAN.md.)"
-        )
+        sys.exit("No tasks registered. (MVP task loaders arrive in Phase 2 — see PLAN.md.)")
     return [get_task(n) for n in names]
 
 
@@ -64,13 +62,17 @@ def _add_common(p: argparse.ArgumentParser) -> None:
     p.add_argument("--concurrency", type=int, default=8)
     p.add_argument("--overwrite", action="store_true")
     p.add_argument(
-        "--answer-stop", nargs="*", default=None,
+        "--answer-stop",
+        nargs="*",
+        default=None,
         help="Post-think stop sequence(s) applied to the answer before judging.",
     )
     p.add_argument(
-        "--max-tokens", type=int, default=None,
+        "--max-tokens",
+        type=int,
+        default=None,
         help="Override the per-task generation budget (e.g. scale up for "
-             "thinking models that emit reasoning before the answer).",
+        "thinking models that emit reasoning before the answer).",
     )
 
 
@@ -88,7 +90,7 @@ def _add_judge_args(p: argparse.ArgumentParser) -> None:
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(prog="seceval")
+    parser = argparse.ArgumentParser(prog="sayf-eval")
     sub = parser.add_subparsers(dest="cmd", required=True)
 
     p_inf = sub.add_parser("run-inference", help="Collect model responses.")

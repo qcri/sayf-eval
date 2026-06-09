@@ -1,12 +1,12 @@
 """Metric tests — VSP MAD, set P/R/F1, corpus accuracy + denominator policy."""
 
-from seceval.metrics import (
+from sayf_eval.metrics import (
     calculate_vsp_mad,
     compute_ate_metrics,
+    parent_only,
     score_corpus,
     set_prf1,
     split_id_set,
-    parent_only,
 )
 
 
@@ -41,8 +41,8 @@ def test_parent_only_strips_subtechnique():
 
 def test_ate_micro_f1():
     rows = [
-        {"extracted_answer": "T1059.001", "ground_truth": "T1059"},   # parent match
-        {"extracted_answer": "T1027", "ground_truth": "T1027,T1055"}, # 1 tp, 1 fn
+        {"extracted_answer": "T1059.001", "ground_truth": "T1059"},  # parent match
+        {"extracted_answer": "T1027", "ground_truth": "T1027,T1055"},  # 1 tp, 1 fn
     ]
     m = compute_ate_metrics(rows, parent=True)
     assert m["tp_total"] == 2 and m["fn_total"] == 1 and m["fp_total"] == 0
@@ -51,8 +51,8 @@ def test_ate_micro_f1():
 def test_corpus_accuracy_denominator_excludes_skipped_only():
     rows = [
         {"is_correct": True, "skipped": False},
-        {"is_correct": False, "skipped": False},   # unparseable model answer = incorrect, still counted
-        {"is_correct": False, "skipped": True},     # judge failure = excluded
+        {"is_correct": False, "skipped": False},  # unparseable model answer = incorrect, still counted
+        {"is_correct": False, "skipped": True},  # judge failure = excluded
     ]
     r = score_corpus("mcq", rows)
     assert r["correct"] == 1 and r["total"] == 2 and r["skipped"] == 1
@@ -61,9 +61,12 @@ def test_corpus_accuracy_denominator_excludes_skipped_only():
 
 def test_corpus_vsp_adds_mad():
     rows = [
-        {"is_correct": True, "skipped": False,
-         "extracted_answer": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
-         "ground_truth": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"},
+        {
+            "is_correct": True,
+            "skipped": False,
+            "extracted_answer": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+            "ground_truth": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+        },
     ]
     r = score_corpus("vsp", rows)
     assert "mad" in r and r["mad"] == 0.0 and r["extraction_success"] == 1

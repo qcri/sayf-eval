@@ -7,7 +7,8 @@ Two layers, kept separate (see PROPOSAL.md):
     metric split (sample-level extract+verdict, corpus-level aggregation).
 """
 
-from seceval.model import GenParams, Model, Response
+from sayf_eval.model import GenParams, Model, Response
+
 
 __version__ = "0.1.0"
 

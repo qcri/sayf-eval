@@ -1,13 +1,35 @@
-# seceval-harness
+<p align="center">
+  <img src="assets/sayf-eval.png" alt="sayf-eval" width="520">
+</p>
 
-A lightweight, **model-agnostic** framework for cybersecurity LLM benchmark
-evaluation. One interface for every LLM: **LiteLLM** as the universal transport,
-a **lighteval-shaped** `Task` / `Model` / `Scorer` structure on top. The judge is
-not special — it is another `Model`, so the model-under-test and the judge can be
-any provider (hosted API or local vLLM) with no code change.
+<h1 align="center">sayf-eval</h1>
 
-See [PROPOSAL.md](PROPOSAL.md) for the design rationale, [PLAN.md](PLAN.md) for
-the build status (checkbox tracker), and [CLAUDE.md](CLAUDE.md) for context.
+<p align="center">
+  <em>A lightweight, model-agnostic framework for evaluating LLMs on cybersecurity benchmarks.</em>
+</p>
+
+<p align="center">
+  <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.10+-blue.svg" alt="Python 3.10+"></a>
+  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License: MIT"></a>
+  <a href="https://pypi.org/project/sayf-eval/"><img src="https://img.shields.io/pypi/v/sayf-eval.svg" alt="PyPI"></a>
+  <img src="https://img.shields.io/badge/code%20style-ruff-000000.svg" alt="Ruff">
+</p>
+
+---
+
+**sayf** (Arabic: *sword*) **-eval** evaluates any LLM — hosted API or local
+checkpoint — through **one common interface**. It rests on two layers kept
+separate:
+
+- **Transport — [LiteLLM](https://github.com/BerriAI/litellm):** one `Model`
+  adapter for every provider (OpenAI, Anthropic, Azure, …) and any
+  OpenAI-compatible local server (vLLM via a `base_url`). No per-provider glue.
+- **Structure — [lighteval](https://github.com/huggingface/lighteval)-shaped:**
+  a `Task` / `Model` / `Scorer` boundary with a two-level metric split
+  (sample-level extract+verdict, corpus-level aggregation).
+
+The **judge is not special** — it is another `Model`, so the model-under-test
+and the judge can each be any provider with no code change.
 
 ## Architecture
 
@@ -22,28 +44,30 @@ Task (prompt + params + dataset)
 
 | Module | Role |
 |--------|------|
-| `seceval/model.py` | `Model` (LiteLLM adapter), `GenParams`, `Response`, concurrent `generate_batch` |
-| `seceval/task.py` · `registry.py` | `Sample`, `Task`, the task registry |
-| `seceval/judge_prompts.py` | unified judge prompt + per-task format/compare rules |
-| `seceval/scorer.py` | judge call, `<think>`-strip, JSON-verdict parsing, skipped handling |
-| `seceval/metrics.py` | corpus aggregation (accuracy, ATE micro-F1, VSP MAD) |
-| `seceval/datasets.py` · `tasks/` | dataset loaders + task registrations |
-| `seceval/pipeline.py` · `cli.py` | end-to-end run loop and CLI |
+| `sayf_eval/model.py` | `Model` (LiteLLM adapter), `GenParams`, `Response`, concurrent `generate_batch` |
+| `sayf_eval/task.py` · `registry.py` | `Sample`, `Task`, the task registry |
+| `sayf_eval/judge_prompts.py` | unified judge prompt + per-task format/compare rules |
+| `sayf_eval/scorer.py` | judge call, `<think>`-strip, JSON-verdict parsing, skipped handling |
+| `sayf_eval/metrics.py` | corpus aggregation (accuracy, ATE micro-F1, VSP MAD) |
+| `sayf_eval/datasets.py` · `tasks/` | dataset loaders + task registrations |
+| `sayf_eval/pipeline.py` · `cli.py` | end-to-end run loop and CLI |
 
 ## Install
 
 ```bash
-pip install -e .          # litellm, datasets, cvss, pydantic
+pip install sayf-eval
+# or, from source:
+pip install -e ".[dev]"
 ```
 
 ## Quick start
 
 ```bash
-# 1. Credentials (LiteLLM reads provider keys from the environment)
-cp configs/.env.example .env && set -a && . ./.env && set +a
+# Credentials: LiteLLM reads provider keys from the environment.
+export OPENAI_API_KEY=...   ANTHROPIC_API_KEY=...
 
-# 2. End-to-end: inference + judge across the MVP tasks
-seceval run \
+# End-to-end: inference + judge across a few tasks
+sayf-eval run \
   --tasks mcq seceval vsp taa \
   --model openai/gpt-4o \
   --judge anthropic/claude-sonnet-4-20250514 \
@@ -51,8 +75,8 @@ seceval run \
   --max-samples 5
 
 # Or split the steps
-seceval run-inference --tasks mcq --model openai/gpt-4o --output-dir outputs/gpt4o
-seceval run-judge     --tasks mcq --judge openai/gpt-4o --output-dir outputs/gpt4o
+sayf-eval run-inference --tasks mcq --model openai/gpt-4o --output-dir outputs/gpt4o
+sayf-eval run-judge     --tasks mcq --judge openai/gpt-4o --output-dir outputs/gpt4o
 ```
 
 Outputs per task: `<task>_responses.jsonl`, `<task>_detailed.jsonl`, and a
@@ -60,29 +84,27 @@ combined `summary.json`.
 
 ### Local models (vLLM)
 
-Local serving is **vLLM behind LiteLLM**: serve the model OpenAI-compatibly and
-point the framework at its `base_url` — it is just another `Model`.
+A local model is **just another endpoint**: serve it OpenAI-compatibly and point
+sayf-eval at its `base_url`.
 
 ```bash
-# Serve (tuning flags that used to live in the harness now live here):
-vllm serve Qwen/Qwen3-8B \
-  --port 8000 \
-  --enforce-eager            # + --num-gpu-blocks-override / max-len as needed
+# Serve (tuning flags that used to live in scripts now live at serve time):
+vllm serve Qwen/Qwen3-8B --port 8000 --enforce-eager
 
-# Evaluate through the same interface (note openai/ prefix + base-url):
-seceval run \
+# Evaluate through the same interface (note the hosted_vllm/ prefix + base-url):
+sayf-eval run \
   --tasks mcq vsp \
-  --model openai/Qwen/Qwen3-8B --base-url http://localhost:8000/v1 --api-key EMPTY \
+  --model hosted_vllm/Qwen/Qwen3-8B --base-url http://localhost:8000/v1 --api-key EMPTY \
   --judge anthropic/claude-sonnet-4-20250514 \
   --output-dir outputs/qwen3-8b
 ```
 
-For reasoning models, pass `--answer-stop` to apply a stop sequence to the
-answer *after* the `<think>` block is stripped (the RedSage fix).
+For reasoning models, pass `--answer-stop` to apply a stop sequence to the answer
+*after* the `<think>` block is stripped, and `--max-tokens` to scale the budget.
 
 ## Tasks
 
-24 sub-tasks registered (`seceval run --tasks ...`):
+24 cybersecurity sub-tasks across 8 benchmark families (`sayf-eval run --tasks …`):
 
 - **CTI-Bench:** `mcq`, `rcm`, `vsp`, `ate`, `cti_taa`
 - **AthenaBench:** `ckt`, `rms`, `taa`, `athena_ate`, `athena_rcm`, `athena_vsp`
@@ -90,29 +112,31 @@ answer *after* the `<think>` block is stripped (the RedSage fix).
 - **RedSage:** `redsage_frameworks`, `redsage_generals`, `redsage_skills`, `redsage_cli`, `redsage_kali`
 - **Other MCQ:** `seceval`, `cybermetric`, `secbench`, `mmlu-cs`, `cissp`
 
-`cissp` needs a dataset path via the `SECEVAL_CISSP_PATH` env var (it is not a
-public HF dataset). All others load from HuggingFace / GitHub on first run.
+`cissp` needs a dataset path via `SAYF_EVAL_CISSP_PATH` (not a public dataset);
+all others load from HuggingFace / GitHub on first run.
 
 ## Standardized pipeline choices
 
-Carried over from the original audit, these remove measurement artifacts without
-changing task semantics: temperature 0 / top_p 1 / fixed seed; per-task
-calibrated token budgets; `<think>` stripped before judging with the stop
-sequence applied to the answer only; **denominator = all attempted items**
-(unparseable/empty answers are incorrect; only judge-API failures are excluded,
-from both numerator and denominator).
+sayf-eval applies fixed, documented choices that remove measurement artifacts
+without changing task semantics: temperature 0 / top_p 1 / fixed seed; per-task
+token budgets; `<think>` stripped before judging with the stop sequence applied
+to the answer only; and **denominator = all attempted items** (unparseable/empty
+answers are incorrect; only judge-API failures are excluded — from both
+numerator and denominator).
 
-## Testing
+## Development
 
 ```bash
-pytest tests/
+make install     # pip install -e ".[dev]"
+make style       # ruff format + ruff check --fix
+make quality     # ruff format --check + ruff check  (CI gate)
+make test        # pytest
 ```
 
-> **Cluster note:** the GPU login node blocks `pip install` and `pytest` install
-> (the same resource guard that gates heavy I/O — submit installs via SLURM, or
-> use a prepared env). To validate the core without pytest:
-> ```bash
-> PYTHONPATH=.:.deps python tests/run_no_pytest.py
-> ```
-> (`.deps` is an optional local dir for a directly-extracted `cvss` wheel when
-> pip is unavailable.)
+See [VALIDATION.md](VALIDATION.md) for the end-to-end validation plan (the
+framework reproduces the reference harness byte-for-byte on inputs and 1:1 on
+judge verdicts) and [CONTRIBUTING.md](CONTRIBUTING.md) to get involved.
+
+## License
+
+[MIT](LICENSE).

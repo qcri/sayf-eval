@@ -2,7 +2,7 @@
 
 Feeds identical stored model responses through BOTH:
   - original: run_evaluate_llm_judge.create_judge_prompt + parse_judge_response
-  - new:      seceval.judge_prompts.create_judge_prompt + scorer.parse_judge_response
+  - new:      sayf_eval.judge_prompts.create_judge_prompt + scorer.parse_judge_response
 using the SAME Azure gpt-5.4 judge and the SAME transport (so the only variables
 are the prompt-construction and parse code, both ported verbatim).
 
@@ -27,13 +27,11 @@ import json
 import os
 import sys
 
+
 AZURE_ENDPOINT = "https://qcri-cyber-cx-ai-03-eus2.openai.azure.com/"
 AZURE_DEPLOYMENT = "gpt-5.4"
 AZURE_API_VERSION = "2024-12-01-preview"
-ORIG_DIR = (
-    "/export/home/aberriche/BenchBench/BenchmarkingSecBenchmarks/"
-    "unified-benchmark-pipeline"
-)
+ORIG_DIR = "/export/home/aberriche/BenchBench/BenchmarkingSecBenchmarks/unified-benchmark-pipeline"
 
 
 def orig_choices_block(meta: dict):
@@ -81,9 +79,10 @@ def main() -> int:
     sys.path.insert(0, ORIG_DIR)
     import run_evaluate_llm_judge as O
 
-    from seceval.judge_prompts import create_judge_prompt as new_jp
-    from seceval.scorer import parse_judge_response as new_parse, format_choices, strip_reasoning
-    from seceval.model import GenParams, Model
+    from sayf_eval.judge_prompts import create_judge_prompt as new_jp
+    from sayf_eval.model import GenParams, Model
+    from sayf_eval.scorer import format_choices, strip_reasoning
+    from sayf_eval.scorer import parse_judge_response as new_parse
 
     judge = Model(
         model=f"azure/{AZURE_DEPLOYMENT}",
@@ -107,14 +106,13 @@ def main() -> int:
         if task not in files:
             continue
         with open(files[task]) as f:
-            rows = [json.loads(l) for l in f if l.strip()][: args.per_task]
+            rows = [json.loads(line) for line in f if line.strip()][: args.per_task]
         for r in rows:
             meta = r.get("metadata", {}) or {}
             tt = meta.get("task_type") or O.get_task_type(task)
             q = r.get("prompt", "")
             if isinstance(q, list):  # original stored chat-list (seceval): take last user turn
-                q = next((m.get("content", "") for m in reversed(q)
-                          if m.get("role") == "user"), "")
+                q = next((m.get("content", "") for m in reversed(q) if m.get("role") == "user"), "")
             gt = str(r.get("ground_truth", ""))
             ans = strip_think(r.get("model_response", ""))
 
@@ -129,7 +127,7 @@ def main() -> int:
             items.append((task, tt, op, np_))
 
     n = len(items)
-    print(f">> {n} samples across {len(set(i[0] for i in items))} tasks; judging via {AZURE_DEPLOYMENT}")
+    print(f">> {n} samples across {len({i[0] for i in items})} tasks; judging via {AZURE_DEPLOYMENT}")
 
     # ---- judge: one call per orig prompt; extra calls only where prompts differ ----
     orig_texts = [r.text for r in judge.generate_batch([msg(it[2]) for it in items], params)]
@@ -144,8 +142,10 @@ def main() -> int:
     per_task: dict[str, dict] = {}
     ko, kn = [], []  # kappa labels over comparable (non-skipped both) samples
     for (task, tt, op, npr), ot, nt in zip(items, orig_texts, new_texts):
-        d = per_task.setdefault(task, dict(n=0, pmatch=0, agree=0, cmp=0,
-                                           o_correct=0, o_total=0, n_correct=0, n_total=0))
+        d = per_task.setdefault(
+            task,
+            {"n": 0, "pmatch": 0, "agree": 0, "cmp": 0, "o_correct": 0, "o_total": 0, "n_correct": 0, "n_total": 0},
+        )
         d["n"] += 1
         if op == npr:
             d["pmatch"] += 1
@@ -159,28 +159,32 @@ def main() -> int:
             d["n_total"] += 1
             d["n_correct"] += int(nv.is_correct)
         if not o_skip and not nv.skipped:
-            d["cmp"] += 1   # comparable: neither pipeline skipped
+            d["cmp"] += 1  # comparable: neither pipeline skipped
             d["agree"] += int(bool(ov.get("is_correct")) == nv.is_correct)
             ko.append(bool(ov.get("is_correct")))
             kn.append(nv.is_correct)
 
     # ---- report ----
     print(f"\n{'task':18s} {'n':>3s} {'pmatch':>8s} {'agree':>8s} {'acc_orig':>9s} {'acc_new':>8s}")
-    tot = dict(n=0, pmatch=0, agree=0, cmp=0)
+    tot = {"n": 0, "pmatch": 0, "agree": 0, "cmp": 0}
     for task in sorted(per_task):
         d = per_task[task]
         acc_o = d["o_correct"] / d["o_total"] if d["o_total"] else 0.0
         acc_n = d["n_correct"] / d["n_total"] if d["n_total"] else 0.0
-        print(f"{task:18s} {d['n']:>3d} {d['pmatch']:>5d}/{d['n']:<2d} "
-              f"{d['agree']:>5d}/{d['cmp']:<2d} {acc_o:>9.3f} {acc_n:>8.3f}")
+        print(
+            f"{task:18s} {d['n']:>3d} {d['pmatch']:>5d}/{d['n']:<2d} "
+            f"{d['agree']:>5d}/{d['cmp']:<2d} {acc_o:>9.3f} {acc_n:>8.3f}"
+        )
         for k in tot:
             tot[k] += d[k]
 
     pid = tot["pmatch"] / tot["n"] if tot["n"] else 0.0
     agr = tot["agree"] / tot["cmp"] if tot["cmp"] else 0.0
-    print(f"\nOVERALL  n={tot['n']}  prompt-identity={pid:.1%} ({tot['pmatch']}/{tot['n']})  "
-          f"verdict-agreement={agr:.1%} ({tot['agree']}/{tot['cmp']})  "
-          f"kappa={kappa(ko, kn):.3f}")
+    print(
+        f"\nOVERALL  n={tot['n']}  prompt-identity={pid:.1%} ({tot['pmatch']}/{tot['n']})  "
+        f"verdict-agreement={agr:.1%} ({tot['agree']}/{tot['cmp']})  "
+        f"kappa={kappa(ko, kn):.3f}"
+    )
     print("(agreement base = samples neither pipeline marked judge-skipped)")
     return 0
 

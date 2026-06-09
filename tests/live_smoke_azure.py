@@ -14,11 +14,12 @@ import os
 import sys
 import tempfile
 
-from seceval.model import GenParams, Model
-from seceval.scorer import JudgeScorer
-from seceval.pipeline import RunConfig, run_tasks
-import seceval.tasks  # noqa: F401 — registers tasks
-from seceval.registry import get_task
+import sayf_eval.tasks  # noqa: F401 — registers tasks
+from sayf_eval.model import GenParams, Model
+from sayf_eval.pipeline import RunConfig, run_tasks
+from sayf_eval.registry import get_task
+from sayf_eval.scorer import JudgeScorer
+
 
 AZURE_ENDPOINT = "https://qcri-cyber-cx-ai-03-eus2.openai.azure.com/"
 AZURE_DEPLOYMENT = "gpt-5.4"
@@ -56,9 +57,12 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--samples", type=int, default=3)
     ap.add_argument("--tasks", nargs="+", default=["mcq", "seceval"])
-    ap.add_argument("--max-tokens", type=int, default=4096,
-                    help="Budget override; generous so the reasoning judge/model "
-                         "isn't starved (this is a loader/pipeline smoke).")
+    ap.add_argument(
+        "--max-tokens",
+        type=int,
+        default=4096,
+        help="Budget override; generous so the reasoning judge/model isn't starved (this is a loader/pipeline smoke).",
+    )
     args = ap.parse_args()
 
     model = make_azure_model()
@@ -69,10 +73,12 @@ def main() -> int:
     tasks = [get_task(t) for t in args.tasks]
 
     out = tempfile.mkdtemp(prefix="seceval_azure_smoke_")
-    print(f">> running tasks={args.tasks} samples={args.samples} "
-          f"max_tokens={args.max_tokens} -> {out}")
+    print(f">> running tasks={args.tasks} samples={args.samples} max_tokens={args.max_tokens} -> {out}")
     summary = run_tasks(
-        tasks, model, scorer, out,
+        tasks,
+        model,
+        scorer,
+        out,
         RunConfig(max_samples=args.samples, max_tokens=args.max_tokens),
     )
 
@@ -85,8 +91,10 @@ def main() -> int:
     for t in args.tasks:
         s = summary.get(t, {})
         attempted = s.get("total", 0) + s.get("skipped", 0)
-        print(f"   {t}: attempted={attempted} total={s.get('total')} "
-              f"skipped={s.get('skipped')} accuracy={s.get('accuracy')}")
+        print(
+            f"   {t}: attempted={attempted} total={s.get('total')} "
+            f"skipped={s.get('skipped')} accuracy={s.get('accuracy')}"
+        )
         if attempted == 0:
             ok = False
     print("RESULT:", "PASS" if ok else "FAIL")

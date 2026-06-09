@@ -18,10 +18,8 @@ import os
 import sys
 import tempfile
 
-ORIG_DIR = (
-    "/export/home/aberriche/BenchBench/BenchmarkingSecBenchmarks/"
-    "unified-benchmark-pipeline"
-)
+
+ORIG_DIR = "/export/home/aberriche/BenchBench/BenchmarkingSecBenchmarks/unified-benchmark-pipeline"
 
 # task -> how the original collects it (mirrors run_inference_benchmarks.main()).
 _HF = "RISys-Lab/Benchmarks_CyberSec_CTI-Bench"
@@ -31,10 +29,14 @@ _REDSAGE = "RISys-Lab/Benchmarks_CyberSec_RedSageMCQ"
 _ATHENA = "https://github.com/Athena-Software-Group/athenabench/raw/main/benchmark"
 
 HF_TASKS = {
-    "mcq": (_HF, "cti-mcq"), "rcm": (_HF, "cti-rcm"),
-    "vsp": (_HF, "cti-vsp"), "ate": (_HF, "cti-ate"),
-    "secure_maet": (_SECURE, "MAET"), "secure_cwet": (_SECURE, "CWET"),
-    "secure_kcv": (_SECURE, "KCV"), "secbench": (_SECBENCH, "MCQs_English"),
+    "mcq": (_HF, "cti-mcq"),
+    "rcm": (_HF, "cti-rcm"),
+    "vsp": (_HF, "cti-vsp"),
+    "ate": (_HF, "cti-ate"),
+    "secure_maet": (_SECURE, "MAET"),
+    "secure_cwet": (_SECURE, "CWET"),
+    "secure_kcv": (_SECURE, "KCV"),
+    "secbench": (_SECBENCH, "MCQs_English"),
     "redsage_frameworks": (_REDSAGE, "cybersecurity_knowledge_frameworks"),
     "redsage_generals": (_REDSAGE, "cybersecurity_knowledge_generals"),
     "redsage_skills": (_REDSAGE, "cybersecurity_skills"),
@@ -42,9 +44,12 @@ HF_TASKS = {
     "redsage_kali": (_REDSAGE, "cybersecurity_tools_kali"),
 }
 JSONL_TASKS = {
-    "ckt": f"{_ATHENA}/athena-cti-ckt-3k.jsonl", "rms": f"{_ATHENA}/athena-cti-rms.jsonl",
-    "taa": f"{_ATHENA}/athena-cti-taa.jsonl", "athena_ate": f"{_ATHENA}/athena-cti-ate.jsonl",
-    "athena_rcm": f"{_ATHENA}/athena-cti-rcm.jsonl", "athena_vsp": f"{_ATHENA}/athena-cti-vsp.jsonl",
+    "ckt": f"{_ATHENA}/athena-cti-ckt-3k.jsonl",
+    "rms": f"{_ATHENA}/athena-cti-rms.jsonl",
+    "taa": f"{_ATHENA}/athena-cti-taa.jsonl",
+    "athena_ate": f"{_ATHENA}/athena-cti-ate.jsonl",
+    "athena_rcm": f"{_ATHENA}/athena-cti-rcm.jsonl",
+    "athena_vsp": f"{_ATHENA}/athena-cti-vsp.jsonl",
 }
 TSV_TASKS = {"cti_taa": "https://raw.githubusercontent.com/maveryn/cti-bench/main/data/cti-taa.tsv"}
 SPECIAL = {"mmlu-cs", "seceval", "cybermetric"}
@@ -55,21 +60,21 @@ PROMPT_DIFF_SKIP = {"seceval"}
 ALL_TASKS = list(HF_TASKS) + list(JSONL_TASKS) + list(TSV_TASKS) + sorted(SPECIAL)
 
 
-def collect_original(O, task: str, out: str, n: int) -> None:
+def collect_original(orig, task: str, out: str, n: int) -> None:
     """Invoke the current original collector for `task`, generation stubbed."""
     if task in HF_TASKS:
         dn, sub = HF_TASKS[task]
-        O.collect_huggingface_benchmark(task, dn, sub, None, None, out, n, 1024)
+        orig.collect_huggingface_benchmark(task, dn, sub, None, None, out, n, 1024)
     elif task in JSONL_TASKS:
-        O.collect_athenabench_jsonl(task, JSONL_TASKS[task], None, None, out, n, 1024)
+        orig.collect_athenabench_jsonl(task, JSONL_TASKS[task], None, None, out, n, 1024)
     elif task in TSV_TASKS:
-        O.collect_ctibench_tsv(task, TSV_TASKS[task], None, None, out, n, 1024)
+        orig.collect_ctibench_tsv(task, TSV_TASKS[task], None, None, out, n, 1024)
     elif task == "mmlu-cs":
-        O.collect_mmlu_cs(None, None, out, n, 1024)
+        orig.collect_mmlu_cs(None, None, out, n, 1024)
     elif task == "seceval":
-        O.collect_seceval(None, None, out, n, 1024)
+        orig.collect_seceval(None, None, out, n, 1024)
     elif task == "cybermetric":
-        O.collect_cybermetric(None, None, out, n, 1024)
+        orig.collect_cybermetric(None, None, out, n, 1024)
     else:
         raise KeyError(task)
 
@@ -92,14 +97,14 @@ def main() -> int:
     args = ap.parse_args()
 
     sys.path.insert(0, ORIG_DIR)
-    import run_inference_benchmarks as O
+    import run_inference_benchmarks as orig
 
     # Stub generation: collectors still build/write prompts, but call no model.
-    O.batch_generate = lambda items, *a, **k: ["" for _ in items]
-    O.generate_response = lambda *a, **k: ""
+    orig.batch_generate = lambda items, *a, **k: ["" for _ in items]
+    orig.generate_response = lambda *a, **k: ""
 
-    import seceval.tasks  # noqa: F401
-    from seceval.registry import get_task, available_tasks
+    import sayf_eval.tasks  # noqa: F401
+    from sayf_eval.registry import available_tasks, get_task
 
     rows = []
     overall_ok = True
@@ -109,7 +114,7 @@ def main() -> int:
             continue
         out = os.path.join(tempfile.mkdtemp(), f"{task}.jsonl")
         try:
-            collect_original(O, task, out, args.samples)
+            collect_original(orig, task, out, args.samples)
         except Exception as e:
             rows.append((task, "ERR", f"original collector failed: {e}", ""))
             overall_ok = False
@@ -138,8 +143,9 @@ def main() -> int:
                 if norm(s.prompt) == norm(r.get("prompt", "")):
                     p_ok += 1
                 elif not first:
-                    first = (f"\n    new[:160]={norm(s.prompt)[:160]!r}"
-                             f"\n    ref[:160]={norm(r.get('prompt',''))[:160]!r}")
+                    first = (
+                        f"\n    new[:160]={norm(s.prompt)[:160]!r}\n    ref[:160]={norm(r.get('prompt', ''))[:160]!r}"
+                    )
         n = len(ref)
         if task in PROMPT_DIFF_SKIP:
             ok = gt_ok == n
@@ -153,8 +159,7 @@ def main() -> int:
     print(f"{'task':20s} {'verdict':7s} detail")
     for task, verdict, detail, diff in rows:
         print(f"{task:20s} {verdict:7s} {detail}{diff}")
-    print("\nPARITY (vs current original collectors):",
-          "PASS" if overall_ok else "DIFFERENCES FOUND")
+    print("\nPARITY (vs current original collectors):", "PASS" if overall_ok else "DIFFERENCES FOUND")
     return 0 if overall_ok else 1
 
 

@@ -1,4 +1,4 @@
-# seceval-harness — project context
+# sayf-eval — project context
 
 A lightweight, model-agnostic framework for cybersecurity LLM benchmark
 evaluation. It re-shapes our existing script-based harness into a small reusable
@@ -36,7 +36,7 @@ provider via LiteLLM with no code change.
 
 ## Key locations
 
-- **This repo:** `/export/home/aberriche/BenchBench/seceval-harness/` (fresh, `main`).
+- **This repo:** `/export/home/aberriche/BenchBench/sayf-eval/` (fresh, `main`).
 - **Original harness (logic to port, leave untouched):**
   `/export/home/aberriche/BenchBench/BenchmarkingSecBenchmarks/` — esp.
   `unified-benchmark-pipeline/{run_inference_benchmarks.py, run_evaluate_llm_judge.py, evaluate.py}`.

@@ -8,8 +8,8 @@ as *data* in the registry (``registry.py``), not as ``Task`` subclasses.
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Callable
 
 
 @dataclass
@@ -51,7 +51,7 @@ class Task:
 
     name: str
     task_type: str
-    loader: Callable[[], list["Sample"]]
+    loader: Callable[[], list[Sample]]
     system_prompt: str | None = None
     max_tokens: int = 1024
     scorer_kind: str = ""
@@ -60,7 +60,7 @@ class Task:
         if not self.scorer_kind:
             self.scorer_kind = self.task_type
 
-    def load(self, max_samples: int | None = None) -> list["Sample"]:
+    def load(self, max_samples: int | None = None) -> list[Sample]:
         samples = self.loader()
         if max_samples is not None:
             samples = samples[:max_samples]

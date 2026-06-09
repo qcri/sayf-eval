@@ -1,14 +1,36 @@
+# ─────────────────────────── Build / packaging ───────────────────────────
 [build-system]
 requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+sayf_eval = ["py.typed"]
+
 [project]
-name = "seceval-harness"
+name = "sayf-eval"
 version = "0.1.0"
-description = "Lightweight, model-agnostic cybersecurity LLM benchmark framework (LiteLLM transport, lighteval-shaped structure)."
+description = "A lightweight, model-agnostic framework for evaluating LLMs on cybersecurity benchmarks."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
+authors = [{ name = "Sayf-Eval Authors", email = "aberriche@hbku.edu.qa" }]
+maintainers = [{ name = "Sayf-Eval Authors", email = "aberriche@hbku.edu.qa" }]
+keywords = ["evaluation", "llm", "cybersecurity", "benchmark", "litellm", "security"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
+    "Topic :: Security",
+]
 dependencies = [
     "litellm>=1.50",
     "datasets>=2.18",
@@ -19,13 +41,39 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "pytest>=7.0",
+    "ruff>=0.6",
+    "build>=1.0",
+    "twine>=5.0",
 ]
 
-[project.scripts]
-seceval = "seceval.cli:main"
+[project.urls]
+Homepage = "https://github.com/qcri/sayf-eval"
+Repository = "https://github.com/qcri/sayf-eval"
+Issues = "https://github.com/qcri/sayf-eval/issues"
 
-[tool.setuptools.packages.find]
-include = ["seceval*"]
+[project.scripts]
+sayf-eval = "sayf_eval.cli:main"
+
+# ─────────────────────────────── Code style ───────────────────────────────
+[tool.ruff]
+line-length = 119
+src = ["src", "tests"]
+
+[tool.ruff.lint]
+# pycodestyle (E/W), Pyflakes (F), isort (I), comprehensions (C4), pyupgrade (UP).
+# E501 (line length) is handled by the formatter, not the linter.
+select = ["E", "F", "I", "W", "C4", "UP"]
+ignore = ["E501"]
+
+[tool.ruff.lint.isort]
+lines-after-imports = 2
+known-first-party = ["sayf_eval"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+# Only unit tests run in CI; live/parity scripts need API keys + a cluster.
+addopts = "--ignore=tests/live_smoke_azure.py --ignore=tests/judge_agreement.py --ignore=tests/parity_prompts.py --ignore=tests/parity_vs_current.py --ignore=tests/run_no_pytest.py"

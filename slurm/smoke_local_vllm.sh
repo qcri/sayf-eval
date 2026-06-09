@@ -7,8 +7,8 @@
 #SBATCH --gres=gpu:1
 #SBATCH --mem=32G
 #SBATCH --time=01:30:00
-#SBATCH --output=/export/home/aberriche/BenchBench/seceval-harness/slurm/logs/%x_%j.out
-#SBATCH --error=/export/home/aberriche/BenchBench/seceval-harness/slurm/logs/%x_%j.err
+#SBATCH --output=/export/home/aberriche/BenchBench/sayf-eval/slurm/logs/%x_%j.out
+#SBATCH --error=/export/home/aberriche/BenchBench/sayf-eval/slurm/logs/%x_%j.err
 set -uo pipefail
 
 # Self-contained live validation of the local-vLLM-behind-LiteLLM path:
@@ -28,7 +28,7 @@ set -uo pipefail
 #     slurm/smoke_local_vllm.sh
 # (Validated PASS on gpu-all / A16, job 311007.)
 
-ROOT=/export/home/aberriche/BenchBench/seceval-harness
+ROOT=/export/home/aberriche/BenchBench/sayf-eval
 MODEL_HF=Qwen/Qwen2.5-0.5B-Instruct
 SERVED=qwen-smoke
 PORT=8011
@@ -79,16 +79,16 @@ done
 curl -sf "http://localhost:$PORT/health" >/dev/null || { echo "server never became healthy"; exit 1; }
 
 cd "$ROOT"
-export PYTHONPATH="$ROOT:${PYTHONPATH:-}"
+export PYTHONPATH="$ROOT/src:${PYTHONPATH:-}"
 
 # ── Unit tests (real env) ─────────────────────────────────────────────────────
 echo ">> pytest"
 "$PY" -m pytest tests/ -q || echo "WARN: pytest reported failures (see above)"
 
 # ── Live end-to-end smoke ─────────────────────────────────────────────────────
-echo ">> live smoke: seceval run (model + judge = local $SERVED)"
+echo ">> live smoke: sayf-eval run (model + judge = local $SERVED)"
 OUT="$ROOT/outputs/smoke_${SLURM_JOB_ID:-local}"
-"$PY" -m seceval.cli run \
+"$PY" -m sayf_eval.cli run \
     --tasks mcq seceval \
     --model "hosted_vllm/$SERVED" --base-url "http://localhost:$PORT/v1" --api-key EMPTY \
     --judge "hosted_vllm/$SERVED" --judge-base-url "http://localhost:$PORT/v1" --judge-api-key EMPTY \

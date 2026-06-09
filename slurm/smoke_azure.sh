@@ -6,8 +6,8 @@
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=8G
 #SBATCH --time=00:30:00
-#SBATCH --output=/export/home/aberriche/BenchBench/seceval-harness/slurm/logs/%x_%j.out
-#SBATCH --error=/export/home/aberriche/BenchBench/seceval-harness/slurm/logs/%x_%j.err
+#SBATCH --output=/export/home/aberriche/BenchBench/sayf-eval/slurm/logs/%x_%j.out
+#SBATCH --error=/export/home/aberriche/BenchBench/sayf-eval/slurm/logs/%x_%j.err
 set -uo pipefail
 
 # Live validation of the LiteLLM transport against the project's Azure OpenAI
@@ -15,7 +15,7 @@ set -uo pipefail
 # judge-as-Model, pipeline, real dataset load, and corpus metrics. Also runs the
 # real pytest suite (deps install fine on compute nodes, unlike the login node).
 
-ROOT=/export/home/aberriche/BenchBench/seceval-harness
+ROOT=/export/home/aberriche/BenchBench/sayf-eval
 ORIG=/export/home/aberriche/BenchBench/BenchmarkingSecBenchmarks
 ENV_BIN=/export/home/aberriche/miniconda3/envs/vllm/bin
 export PATH="$ENV_BIN:$PATH"
@@ -35,7 +35,7 @@ echo ">> installing litellm + pytest"
 "$PY" -c "import litellm, pytest, cvss, datasets; from importlib.metadata import version; print('deps ok: litellm', version('litellm'))"
 
 cd "$ROOT"
-export PYTHONPATH="$ROOT:${PYTHONPATH:-}"
+export PYTHONPATH="$ROOT/src:${PYTHONPATH:-}"
 
 echo ">> pytest"
 "$PY" -m pytest tests/ -q || echo "WARN: pytest reported failures"

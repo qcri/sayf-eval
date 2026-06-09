@@ -1,6 +1,6 @@
 """Scorer parsing + reasoning-strip tests (no network)."""
 
-from seceval.scorer import parse_judge_response, strip_reasoning
+from sayf_eval.scorer import parse_judge_response, strip_reasoning
 
 
 def test_clean_json_correct():

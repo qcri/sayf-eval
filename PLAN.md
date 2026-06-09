@@ -1,4 +1,4 @@
-# Plan: seceval-harness — lightweight cybersecurity eval framework
+# Plan: sayf-eval — lightweight cybersecurity eval framework
 
 ## Context
 
@@ -53,13 +53,13 @@ This file is the living status tracker. Flip `- [ ]` → `- [x]` as work complet
   `stop`, `seed`, `response_format` (JSON/schema for the judge), `timeout`,
   `num_retries`. Response: `resp.choices[0].message.content`, `resp.usage`.
 
-## Module layout (`seceval-harness/`)
+## Module layout (`sayf-eval/`)
 
 ```
-seceval-harness/
+sayf-eval/
 ├── pyproject.toml                # deps: litellm, datasets, cvss, pydantic
 ├── PROPOSAL.md  CLAUDE.md  PLAN.md
-├── seceval/
+├── src/sayf_eval/
 │   ├── model.py        # Model (LiteLLM), GenParams, Response, parallel generate
 │   ├── task.py         # Task dataclass + Sample type
 │   ├── registry.py     # TASKS registry: per-benchmark config (prompt, loader, scorer kind, budget)
@@ -94,7 +94,7 @@ seceval-harness/
 
 ### Phase 0 — Scaffolding
 - [x] Copy plan to `PLAN.md` (this file, checkbox tracker)
-- [x] `pyproject.toml` (litellm, datasets, cvss, pydantic), `.gitignore`, package skeleton `seceval/`
+- [x] `pyproject.toml` (litellm, datasets, cvss, pydantic), `.gitignore`, package skeleton `src/sayf_eval/`
 - [ ] Commit context docs + scaffold (PROPOSAL.md, CLAUDE.md, PLAN.md)
 
 ### Phase 1 — Framework core
@@ -127,10 +127,10 @@ seceval-harness/
 - **Unit:** `pytest tests/` — model adapter (mocked `litellm.completion`), judge
   parsing incl. malformed JSON + `ERROR:`/empty → `skipped`, VSP MAD on known
   vectors, set-match P/R/F1.
-- **Smoke (end-to-end):** `seceval run --tasks mcq seceval vsp taa
+- **Smoke (end-to-end):** `sayf-eval run --tasks mcq seceval vsp taa
   --model openai/gpt-... --judge ... --max-samples 5` against an API judge;
   confirm JSONL + `summary.json` emitted, denominator = total attempted.
-- **Local path:** start `vllm serve <model>`, run `seceval run --model
+- **Local path:** start `vllm serve <model>`, run `sayf-eval run --model
   openai/<served-name> --base-url http://localhost:8000 ...`; confirm a local
   model routes through the same `Model` with no code change.
 - **Parity:** run the 4 MVP tasks on a fixed sample subset through both the old

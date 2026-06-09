@@ -6,10 +6,11 @@ tests so the core can be validated here. Mocks ``litellm`` in-process.
 """
 
 import sys
-import types
 import traceback
+import types
 
-# --- mock litellm before importing seceval.model ---------------------------
+
+# --- mock litellm before importing sayf_eval.model ---------------------------
 
 _calls = []
 _next = {"fn": None}
@@ -47,15 +48,22 @@ def _install_fake_litellm():
 
 _install_fake_litellm()
 
-from seceval.model import GenParams, Model           # noqa: E402
-from seceval.scorer import parse_judge_response, strip_reasoning  # noqa: E402
-from seceval.metrics import (                          # noqa: E402
-    calculate_vsp_mad, compute_ate_metrics, score_corpus, set_prf1,
-    split_id_set, parent_only,
+from sayf_eval.datasets import (  # noqa: E402
+    _choices_to_list,
+    _normalize_gt,
+    _render_mcq,
 )
-from seceval.datasets import (                          # noqa: E402
-    _choices_to_list, _normalize_gt, _render_mcq,
+from sayf_eval.metrics import (  # noqa: E402
+    calculate_vsp_mad,
+    compute_ate_metrics,
+    parent_only,
+    score_corpus,
+    set_prf1,
+    split_id_set,
 )
+from sayf_eval.model import GenParams, Model  # noqa: E402
+from sayf_eval.scorer import parse_judge_response, strip_reasoning  # noqa: E402
+
 
 _results = []
 
@@ -69,6 +77,7 @@ def check(name, fn):
 
 
 # --- model ------------------------------------------------------------------
+
 
 def t_generate_ok():
     _next["fn"] = lambda **kw: _Resp("A")
@@ -91,6 +100,7 @@ def t_empty_not_ok():
 def t_content_filter_single_attempt():
     def boom(**kw):
         raise RuntimeError("blocked by Microsoft content management policy")
+
     _next["fn"] = boom
     _calls.clear()
     m = Model("openai/gpt-x", num_retries=5)
@@ -117,18 +127,23 @@ def t_batch_order():
 
 # --- scorer -----------------------------------------------------------------
 
+
 def t_clean_json_correct():
     v = parse_judge_response('{"extracted_answer": "B", "verdict": "CORRECT", "justification": "ok"}', "mcq")
     assert v.is_correct and not v.skipped and v.extracted_answer == "B"
 
 
 def t_fenced_json():
-    v = parse_judge_response('```json\n{"extracted_answer": "A", "verdict": "INCORRECT", "justification": "n"}\n```', "mcq")
+    v = parse_judge_response(
+        '```json\n{"extracted_answer": "A", "verdict": "INCORRECT", "justification": "n"}\n```', "mcq"
+    )
     assert (not v.is_correct) and not v.skipped and v.extracted_answer == "A"
 
 
 def t_prose_around_json():
-    v = parse_judge_response('Sure!\n{"extracted_answer": "T1059", "verdict": "CORRECT", "justification": "x"} done', "ate")
+    v = parse_judge_response(
+        'Sure!\n{"extracted_answer": "T1059", "verdict": "CORRECT", "justification": "x"} done', "ate"
+    )
     assert v.is_correct and v.extracted_answer == "T1059"
 
 
@@ -159,6 +174,7 @@ def t_strip_think_stop():
 
 
 # --- metrics ----------------------------------------------------------------
+
 
 def t_vsp_identical():
     v = "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"
@@ -208,18 +224,23 @@ def t_corpus_denominator():
 
 
 def t_corpus_vsp():
-    rows = [{"is_correct": True, "skipped": False,
-             "extracted_answer": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
-             "ground_truth": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H"}]
+    rows = [
+        {
+            "is_correct": True,
+            "skipped": False,
+            "extracted_answer": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+            "ground_truth": "CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H",
+        }
+    ]
     r = score_corpus("vsp", rows)
     assert r["mad"] == 0.0 and r["extraction_success"] == 1
 
 
 # --- datasets (loader helpers) ---------------------------------------------
 
+
 def t_choices_dict_skip_empty():
-    assert _choices_to_list({"A": "x", "B": "y", "C": "z", "D": "w", "E": ""}) == [
-        "A. x", "B. y", "C. z", "D. w"]
+    assert _choices_to_list({"A": "x", "B": "y", "C": "z", "D": "w", "E": ""}) == ["A. x", "B. y", "C. z", "D. w"]
 
 
 def t_choices_list():
@@ -243,9 +264,10 @@ def t_render_mcq():
 
 
 def t_registry_full_suite():
-    import seceval.tasks  # noqa: F401
-    from seceval.registry import available_tasks, get_task
-    from seceval.judge_prompts import create_judge_prompt
+    import sayf_eval.tasks  # noqa: F401
+    from sayf_eval.judge_prompts import create_judge_prompt
+    from sayf_eval.registry import available_tasks, get_task
+
     tasks = available_tasks()
     assert len(tasks) >= 24
     for n in tasks:

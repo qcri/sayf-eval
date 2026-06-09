@@ -6,21 +6,21 @@
 #SBATCH --cpus-per-task=4
 #SBATCH --mem=8G
 #SBATCH --time=00:45:00
-#SBATCH --output=/export/home/aberriche/BenchBench/seceval-harness/slurm/logs/%x_%j.out
-#SBATCH --error=/export/home/aberriche/BenchBench/seceval-harness/slurm/logs/%x_%j.err
+#SBATCH --output=/export/home/aberriche/BenchBench/sayf-eval/slurm/logs/%x_%j.out
+#SBATCH --error=/export/home/aberriche/BenchBench/sayf-eval/slurm/logs/%x_%j.err
 set -uo pipefail
 
 # Tier-4: judge-agreement parity between the original scoring pipeline and the
 # new scorer, same Azure gpt-5.4 judge, on identical stored model responses.
 
-ROOT=/export/home/aberriche/BenchBench/seceval-harness
+ROOT=/export/home/aberriche/BenchBench/sayf-eval
 ORIG=/export/home/aberriche/BenchBench/BenchmarkingSecBenchmarks
 ENV_BIN=/export/home/aberriche/miniconda3/envs/vllm/bin
 export PATH="$ENV_BIN:$PATH"
 PY="$ENV_BIN/python"
 mkdir -p "$ROOT/slurm/logs"
 cd "$ROOT"
-export PYTHONPATH="$ROOT:${PYTHONPATH:-}"
+export PYTHONPATH="$ROOT/src:${PYTHONPATH:-}"
 
 set -a; source "$ORIG/.env"; set +a
 [ -n "${AZURE_API_KEY:-}" ] || { echo "AZURE_API_KEY missing"; exit 1; }

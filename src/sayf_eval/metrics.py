@@ -16,6 +16,7 @@ language — there is no hardcoded alias table here (matching the original).
 
 from __future__ import annotations
 
+
 # A "row" is a dict with at least: is_correct, skipped, extracted_answer, and
 # (for structured metrics) ground_truth. Produced by the pipeline from a
 # SampleVerdict joined with its Sample target.
@@ -25,6 +26,7 @@ _VSP_TYPES = ("vsp", "athena_vsp")
 
 
 # -- ID-set helpers (ported verbatim) ---------------------------------------
+
 
 def split_id_set(s: str) -> set[str]:
     """Comma-separated canonical ID list → normalized uppercase set.
@@ -42,6 +44,7 @@ def parent_only(id_set: set[str]) -> set[str]:
 
 
 # -- VSP / CVSS MAD (ported verbatim) ---------------------------------------
+
 
 def calculate_vsp_mad(pred_vector: str, gold_vector: str) -> float:
     """Absolute difference of CVSS v3.1 base scores. 10.0 on parse failure."""
@@ -66,6 +69,7 @@ def calculate_vsp_mad(pred_vector: str, gold_vector: str) -> float:
 
 # -- set precision/recall/F1 -------------------------------------------------
 
+
 def set_prf1(pred_set: set[str], gold_set: set[str]) -> dict:
     """Precision / recall / F1 / exact-match for one prediction-vs-gold pair."""
     tp = len(pred_set & gold_set)
@@ -86,6 +90,7 @@ def set_prf1(pred_set: set[str], gold_set: set[str]) -> dict:
 
 
 # -- corpus aggregations -----------------------------------------------------
+
 
 def compute_ate_metrics(rows: list[dict], parent: bool = True) -> dict:
     """Micro-averaged precision/recall/F1 + exact-match for ATE-style tasks."""

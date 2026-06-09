@@ -1,6 +1,6 @@
 """Dataset loaders — produce ``list[Sample]`` per benchmark.
 
-Each loader normalizes a benchmark's raw rows into :class:`~seceval.task.Sample`
+Each loader normalizes a benchmark's raw rows into :class:`~sayf_eval.task.Sample`
 (the full rendered prompt text + ground truth + choices). Prompt construction is
 ported from the original ``collect_*`` functions so task semantics are unchanged.
 Loaders are lazy (called only when a task runs), so importing the registry does
@@ -19,9 +19,10 @@ import io
 import json
 import os
 import urllib.request
-from typing import Callable
+from collections.abc import Callable
 
-from seceval.task import Sample
+from sayf_eval.task import Sample
+
 
 # MCQ instruction wording, ported from collect_huggingface_benchmark.
 _MCQ_INSTRUCTION = (
@@ -29,8 +30,7 @@ _MCQ_INSTRUCTION = (
     "(A, B, C, D) from the given choices directly."
 )
 _MCQ_INSTRUCTION_SECBENCH = (
-    "You are given multiple choice questions. Answer with the option letter "
-    "from the given choices directly."
+    "You are given multiple choice questions. Answer with the option letter from the given choices directly."
 )
 _LETTERS = ["A", "B", "C", "D", "E"]
 
@@ -82,9 +82,8 @@ def _render_mcq(instruction: str, question: str, choices_list: list[str]) -> str
 
 # -- factory: RISys-Lab HuggingFace benchmarks ------------------------------
 
-def make_hf_loader(
-    name: str, dataset_name: str, subset: str, task_type: str
-) -> Callable[[], list[Sample]]:
+
+def make_hf_loader(name: str, dataset_name: str, subset: str, task_type: str) -> Callable[[], list[Sample]]:
     """Loader for RISys-Lab HF benchmarks (CTI MCQ/RCM/VSP/ATE, SECURE, SecBench,
     RedSage). MCQ-family rows with choices get instruction + scaffolding; SECURE
     and the structured CTI tasks (RCM/VSP/ATE) use the prebuilt ``Prompt`` as-is.
@@ -102,9 +101,7 @@ def make_hf_loader(
             if not question:
                 continue
             gt = _normalize_gt(row)
-            choices_list = _choices_to_list(
-                row.get("answers") or row.get("choices") or row.get("options")
-            )
+            choices_list = _choices_to_list(row.get("answers") or row.get("choices") or row.get("options"))
             # Build the MCQ prompt only when choices exist and the benchmark
             # didn't already ship a fully-formatted Prompt (SECURE / structured).
             if choices_list and not is_secure:
@@ -127,6 +124,7 @@ def make_hf_loader(
 
 # -- factory: AthenaBench GitHub JSONL --------------------------------------
 
+
 def make_athena_loader(url: str, task_type: str) -> Callable[[], list[Sample]]:
     """Loader for AthenaBench JSONL tasks (CKT, RMS, TAA, ATE, RCM, VSP).
 
@@ -147,9 +145,7 @@ def make_athena_loader(url: str, task_type: str) -> Callable[[], list[Sample]]:
             gt = str(row.get("answer", row.get("correct_answer", ""))).strip()
             choices = None
             if "option_a" in row:
-                choices = _choices_to_list(
-                    {L: row.get(f"option_{L.lower()}", "") for L in _LETTERS}
-                )
+                choices = _choices_to_list({L: row.get(f"option_{L.lower()}", "") for L in _LETTERS})
             samples.append(
                 Sample(
                     index=idx,
@@ -204,6 +200,7 @@ def load_seceval() -> list[Sample]:
 
 # -- CTI-Bench TAA (maveryn TSV; no published GT) ---------------------------
 
+
 def load_cti_taa() -> list[Sample]:
     url = "https://raw.githubusercontent.com/maveryn/cti-bench/main/data/cti-taa.tsv"
     text = _http_get(url).decode("utf-8")
@@ -229,15 +226,13 @@ def load_cti_taa() -> list[Sample]:
 
 # -- MMLU computer_security (official 5-shot) -------------------------------
 
+
 def load_mmlu_cs() -> list[Sample]:
     from datasets import load_dataset
 
     dev = load_dataset("lighteval/mmlu", "computer_security", split="dev")
     test = load_dataset("lighteval/mmlu", "computer_security", split="test")
-    header = (
-        "The following are multiple choice questions (with answers) about "
-        "computer security.\n\n"
-    )
+    header = "The following are multiple choice questions (with answers) about computer security.\n\n"
 
     def fmt(sample, include_answer: bool) -> str:
         choices = sample.get("choices", [])
@@ -273,12 +268,11 @@ def load_mmlu_cs() -> list[Sample]:
 
 # -- CyberMetric-500 ---------------------------------------------------------
 
+
 def load_cybermetric() -> list[Sample]:
     from datasets import load_dataset
 
-    ds = load_dataset(
-        "RISys-Lab/Benchmarks_CyberSec_CyberMetrics", "cyberMetric_500", split="test"
-    )
+    ds = load_dataset("RISys-Lab/Benchmarks_CyberSec_CyberMetrics", "cyberMetric_500", split="test")
     samples: list[Sample] = []
     for idx, row in enumerate(ds):
         question = row.get("question", "")
@@ -309,13 +303,14 @@ def load_cybermetric() -> list[Sample]:
     return samples
 
 
-# -- CISSP (local/remote JSON; path via SECEVAL_CISSP_PATH) ------------------
+# -- CISSP (local/remote JSON; path via SAYF_EVAL_CISSP_PATH) ------------------
+
 
 def load_cissp() -> list[Sample]:
-    path = os.environ.get("SECEVAL_CISSP_PATH")
+    path = os.environ.get("SAYF_EVAL_CISSP_PATH")
     if not path:
         raise ValueError(
-            "CISSP dataset path required — set SECEVAL_CISSP_PATH to a local JSON "
+            "CISSP dataset path required — set SAYF_EVAL_CISSP_PATH to a local JSON "
             "file or URL (the CISSP set is not a public HF dataset)."
         )
     if path.startswith("http"):

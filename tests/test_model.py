@@ -5,7 +5,7 @@ import types
 
 import pytest
 
-from seceval.model import GenParams, Model
+from sayf_eval.model import GenParams, Model
 
 
 class _Msg:
@@ -21,9 +21,7 @@ class _Choice:
 class _Resp:
     def __init__(self, content):
         self.choices = [_Choice(content)]
-        self.usage = types.SimpleNamespace(
-            prompt_tokens=1, completion_tokens=2, total_tokens=3
-        )
+        self.usage = types.SimpleNamespace(prompt_tokens=1, completion_tokens=2, total_tokens=3)
 
 
 @pytest.fixture

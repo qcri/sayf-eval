@@ -7,9 +7,10 @@ budgets and system prompts follow the original pipeline's standardized config.
 
 from __future__ import annotations
 
-from seceval import datasets as ds
-from seceval.registry import register
-from seceval.task import Task
+from sayf_eval import datasets as ds
+from sayf_eval.registry import register
+from sayf_eval.task import Task
+
 
 # System prompts (only where the benchmark specifies one).
 _CTI = "You are a cybersecurity expert specializing in cyberthreat intelligence."
@@ -27,10 +28,15 @@ _ATHENA = "https://github.com/Athena-Software-Group/athenabench/raw/main/benchma
 
 
 def _reg(name, task_type, loader, system_prompt=None, max_tokens=1024):
-    register(Task(
-        name=name, task_type=task_type, loader=loader,
-        system_prompt=system_prompt, max_tokens=max_tokens,
-    ))
+    register(
+        Task(
+            name=name,
+            task_type=task_type,
+            loader=loader,
+            system_prompt=system_prompt,
+            max_tokens=max_tokens,
+        )
+    )
 
 
 # ── CTI-Bench (RISys-Lab HF) — domain system prompt ──────────────────────────

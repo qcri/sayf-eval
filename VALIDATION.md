@@ -1,6 +1,6 @@
 # Validation plan (end-to-end)
 
-How we know `seceval-harness` reproduces the original harness
+How we know `sayf-eval` reproduces the original harness
 (`BenchmarkingSecBenchmarks/unified-benchmark-pipeline/`) without per-provider
 glue. Five tiers, cheapest/most-deterministic first. Status is tracked here and
 in [PLAN.md](PLAN.md).
@@ -16,7 +16,7 @@ in [PLAN.md](PLAN.md).
 ## Tier 0 — Static (offline)
 
 ```bash
-PYTHONPATH=.:.deps python tests/run_no_pytest.py     # 29/29 (or: pytest tests/)
+PYTHONPATH=src:.deps python tests/run_no_pytest.py     # 29/29 (or: pytest tests/)
 python -m compileall -q seceval
 ```
 Covers: `Model` adapter (mocked litellm), judge-response parsing incl.
@@ -48,10 +48,10 @@ by design); i.e. the new loaders reproduce the original prompts byte-for-byte.
 
 ## Tier 2 — Scoring-code parity (static)
 
-`seceval/judge_prompts.py::create_judge_prompt` and
-`seceval/scorer.py::parse_judge_response` were ported verbatim from
+`src/sayf_eval/judge_prompts.py::create_judge_prompt` and
+`src/sayf_eval/scorer.py::parse_judge_response` were ported verbatim from
 `run_evaluate_llm_judge.py` (same `format_hint`/`compare_rule` per task_type,
-same JSON+regex fallback, same skipped semantics). `seceval/metrics.py` ports
+same JSON+regex fallback, same skipped semantics). `src/sayf_eval/metrics.py` ports
 `calculate_vsp_mad`, `compute_ate_metrics`, set P/R/F1, and the
 accuracy = correct/total denominator policy. Verified by Tier-0 unit tests.
 

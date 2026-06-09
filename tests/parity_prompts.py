@@ -13,12 +13,11 @@ import json
 import os
 import sys
 
-import seceval.tasks  # noqa: F401 — registers tasks
-from seceval.registry import get_task, available_tasks
+import sayf_eval.tasks  # noqa: F401 — registers tasks
+from sayf_eval.registry import available_tasks, get_task
 
-DEFAULT_REF = (
-    "/export/home/aberriche/BenchBench/BenchmarkingSecBenchmarks/outputs_test_5samples"
-)
+
+DEFAULT_REF = "/export/home/aberriche/BenchBench/BenchmarkingSecBenchmarks/outputs_test_5samples"
 
 # Reference-file stem -> registry task name (here they coincide).
 # Intentional, documented divergences are skipped for the prompt diff:
@@ -93,8 +92,7 @@ def main() -> int:
                     prompt_match += 1
                 elif not first_diff:
                     first_diff = (
-                        f"\n    new[:160]={norm(s.prompt)[:160]!r}"
-                        f"\n    ref[:160]={norm(r.get('prompt',''))[:160]!r}"
+                        f"\n    new[:160]={norm(s.prompt)[:160]!r}\n    ref[:160]={norm(r.get('prompt', ''))[:160]!r}"
                     )
 
         gt_tag = f"gt {gt_match}/{n}"

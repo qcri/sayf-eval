@@ -1,6 +1,6 @@
 """Scorer — LLM-as-judge extraction + verdict (sample level).
 
-The judge is another :class:`~seceval.model.Model`. For each sample the scorer
+The judge is another :class:`~sayf_eval.model.Model`. For each sample the scorer
 builds the unified judge prompt, calls the judge, and parses a strict-JSON
 verdict. Two invariants ported from the original harness:
 
@@ -21,8 +21,9 @@ import json
 import re
 from dataclasses import dataclass
 
-from seceval.judge_prompts import create_judge_prompt
-from seceval.model import GenParams, Model, Response
+from sayf_eval.judge_prompts import create_judge_prompt
+from sayf_eval.model import GenParams, Model, Response
+
 
 # JSON mode for the judge — strict object output.
 JUDGE_RESPONSE_FORMAT = {"type": "json_object"}
@@ -52,7 +53,7 @@ class SampleVerdict:
     """Per-sample judge result."""
 
     extracted_answer: str
-    verdict: str            # "CORRECT" | "INCORRECT" | ""
+    verdict: str  # "CORRECT" | "INCORRECT" | ""
     is_correct: bool
     skipped: bool
     justification: str
@@ -77,11 +78,7 @@ def parse_judge_response(judge_response: str, task_type: str) -> SampleVerdict:
     ``extracted_answer`` if JSON parsing fails.
     """
     stripped = judge_response.strip()
-    if (
-        not stripped
-        or stripped.startswith("ERROR:")
-        or any(m in judge_response for m in _FAILURE_MARKERS)
-    ):
+    if not stripped or stripped.startswith("ERROR:") or any(m in judge_response for m in _FAILURE_MARKERS):
         return SampleVerdict(
             extracted_answer="",
             verdict="",
@@ -137,7 +134,7 @@ class JudgeScorer:
     """Runs the judge over collected model responses (sample level).
 
     Args:
-        judge: the judge :class:`~seceval.model.Model`.
+        judge: the judge :class:`~sayf_eval.model.Model`.
         judge_params: generation params for the judge. ``response_format``
             defaults to JSON mode if unset.
     """
@@ -174,9 +171,7 @@ class JudgeScorer:
         answer_stop: list[str] | None = None,
     ) -> SampleVerdict:
         """Judge one sample. Never raises on judge failure (returns skipped)."""
-        prompt = self.build_prompt(
-            task_type, question, model_answer, target, choices, answer_stop
-        )
+        prompt = self.build_prompt(task_type, question, model_answer, target, choices, answer_stop)
         resp: Response = self.judge.generate([{"role": "user", "content": prompt}], self.params)
         if not resp.ok:
             # Surface as an explicit failure marker the parser maps to skipped.
