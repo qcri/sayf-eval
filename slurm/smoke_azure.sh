@@ -32,7 +32,7 @@ set -a; source "$ORIG/.env"; set +a
 
 echo ">> installing litellm + pytest"
 "$PY" -m pip install -q litellm pytest || { echo "pip install FAILED"; exit 1; }
-"$PY" -c "import litellm, pytest, cvss, datasets; print('deps ok: litellm', litellm.__version__)"
+"$PY" -c "import litellm, pytest, cvss, datasets; from importlib.metadata import version; print('deps ok: litellm', version('litellm'))"
 
 cd "$ROOT"
 export PYTHONPATH="$ROOT:${PYTHONPATH:-}"

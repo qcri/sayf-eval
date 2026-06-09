@@ -41,7 +41,7 @@ PY="$ENV_BIN/python"
 
 echo ">> installing litellm + pytest (compute node has network egress)"
 "$PY" -m pip install -q litellm pytest || { echo "pip install FAILED"; exit 1; }
-"$PY" -c "import litellm, pytest, cvss, datasets; print('deps ok: litellm', litellm.__version__)"
+"$PY" -c "import litellm, pytest, cvss, datasets; from importlib.metadata import version; print('deps ok: litellm', version('litellm'))"
 
 # ── Serve the model (background) ──────────────────────────────────────────────
 echo ">> starting vLLM server"
@@ -56,8 +56,8 @@ echo ">> starting vLLM server"
 VLLM_PID=$!
 trap 'echo ">> stopping vLLM ($VLLM_PID)"; kill $VLLM_PID 2>/dev/null || true' EXIT
 
-echo ">> waiting for /health (up to 5 min)"
-for i in $(seq 1 60); do
+echo ">> waiting for /health (up to 15 min; slow/older GPUs need it)"
+for i in $(seq 1 180); do
     if curl -sf "http://localhost:$PORT/health" >/dev/null 2>&1; then
         echo ">> server healthy after ${i}x5s"; break
     fi

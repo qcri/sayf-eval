@@ -110,7 +110,8 @@ seceval-harness/
 
 ### Phase 2 — MVP tasks wired to registry
 - [x] Port loaders + registry entries: `mcq`, `seceval`, `vsp`, `taa`
-- [x] Smoke eval: offline end-to-end (mock model + judge) — JSONL + summary + correct denominator verified. **Live API/dataset smoke deferred** (login node blocks `litellm` install + needs API keys; run in a prepared env).
+- [x] Smoke eval: offline end-to-end (mock model + judge) verified, **and live** — SLURM job 311002 (`cpu-all`) ran `pytest` (23/23) + an end-to-end Azure gpt-5.4 round-trip (model + judge) on real `mcq`/`seceval` data: correct denominator, sane accuracy, `RESULT: PASS`. Harness: `tests/live_smoke_azure.py`, `slurm/smoke_azure.sh`.
+- [ ] Live local-vLLM path (`slurm/smoke_local_vllm.sh`): first attempt (310999) timed out on an old P100 during model load (timeout bumped 5→15 min); identical `litellm.completion(base_url=...)` code path already validated via Azure. Re-run when a GPU node is free.
 - [x] README quick-start (incl. `vllm serve` example + base_url)
 
 ### Phase 3 — Fan-out to remaining tasks
