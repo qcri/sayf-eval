@@ -93,6 +93,16 @@ _reg("cse_prompt_injection", "cse_prompt_injection", ds.load_cyberseceval_prompt
 _reg("cse_mitre", "cse_mitre", ds.load_cyberseceval_mitre, None, 1024)
 _reg("cse_interpreter", "cse_interpreter", ds.load_cyberseceval_interpreter, None, 1024)
 
+# ── Code-generation (static-analysis scored, scorer_kind="code") ─────────────
+# CyberSecEval insecure-code-gen + SecurityEval. The model writes code; a static
+# analyzer (Bandit / CodeShield) checks it for known weaknesses — no LLM judge.
+# Reported ``accuracy`` is the secure-code rate (higher = safer); ``insecure`` =
+# total - correct. These need --code-analyzer; SecurityEval is Python (Bandit ok),
+# CyberSecEval is multi-language (CodeShield for full coverage).
+_reg("cse_instruct", "cse_instruct", ds.load_cyberseceval_instruct, None, 1024, scorer_kind="code")
+_reg("cse_autocomplete", "cse_autocomplete", ds.load_cyberseceval_autocomplete, None, 1024, scorer_kind="code")
+_reg("securityeval", "securityeval", ds.load_securityeval, None, 1024, scorer_kind="code")
+
 # ── Native-Arabic MCQ (local JSONL; Arabic system prompt) ────────────────────
 # Path via env var. Run as-is for native Arabic, or with --translator
 # --translator-lang en for the translate-test baseline.

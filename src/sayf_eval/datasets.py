@@ -418,6 +418,98 @@ def load_sevenllm() -> list[Sample]:
     return samples
 
 
+# -- CyberSecEval insecure-code-gen + SecurityEval (static-analysis scored) ---
+
+# These code-generation benchmarks are scored by a static analyzer (see
+# codescore.py), not the LLM judge: the model writes code and we check whether it
+# contains a known weakness. Loaders attach ``language`` and the target CWE to
+# each sample's metadata so the analyzer can pick the right rules and report
+# target-CWE hits. ``target`` carries the CWE for convenience.
+
+
+def load_cyberseceval_instruct() -> list[Sample]:
+    """CyberSecEval *instruct* insecure-code-gen (1916 prompts, multi-language).
+
+    ``test_case_prompt`` asks the model to write code for a task whose original
+    implementation had ``cwe_identifier``. Scored by the analyzer for any weakness.
+    """
+    return _load_cse_codegen("SAYF_EVAL_CSE_INSTRUCT_PATH", f"{_PURPLELLAMA_RAW}/instruct/instruct.json", "cse_instruct")
+
+
+def load_cyberseceval_autocomplete() -> list[Sample]:
+    """CyberSecEval *autocomplete* insecure-code-gen (1916 prompts, multi-language).
+
+    Same schema as instruct; the prompt asks for a raw code continuation (often no
+    code fence in the response, which ``extract_code`` handles).
+    """
+    return _load_cse_codegen(
+        "SAYF_EVAL_CSE_AUTOCOMPLETE_PATH", f"{_PURPLELLAMA_RAW}/autocomplete/autocomplete.json", "cse_autocomplete"
+    )
+
+
+def _load_cse_codegen(env_var: str, url: str, task_type: str) -> list[Sample]:
+    data = _load_json_url_or_env(env_var, url)
+    samples: list[Sample] = []
+    for idx, row in enumerate(data):
+        prompt = (row.get("test_case_prompt") or "").strip()
+        if not prompt:
+            continue
+        cwe = str(row.get("cwe_identifier", "")).strip()
+        samples.append(
+            Sample(
+                index=idx,
+                prompt=prompt,
+                target=cwe,
+                metadata={
+                    "task_type": task_type,
+                    "language": str(row.get("language", "")).strip().lower(),
+                    "cwe_identifier": cwe,
+                    "pattern_id": row.get("pattern_id", ""),
+                    "analyzer_origin": row.get("analyzer", ""),
+                },
+            )
+        )
+    return samples
+
+
+def load_securityeval() -> list[Sample]:
+    """SecurityEval (121 Python prompts, each mapped to a target CWE via its ID).
+
+    Rows are ``{ID: "CWE-020_author_1.py", Prompt: <stub+docstring>, Insecure_code}``;
+    the model completes ``Prompt``. Python-only, so Bandit suffices as the scorer.
+    """
+    data_path = os.environ.get("SAYF_EVAL_SECURITYEVAL_PATH")
+    if data_path:
+        with open(data_path, encoding="utf-8") as f:
+            rows = [json.loads(line) for line in f if line.strip()]
+    else:
+        url = "https://raw.githubusercontent.com/s2e-lab/SecurityEval/main/dataset.jsonl"
+        rows = [json.loads(line) for line in _http_get(url).decode("utf-8").splitlines() if line.strip()]
+    samples: list[Sample] = []
+    for idx, row in enumerate(rows):
+        prompt = (row.get("Prompt") or "").strip()
+        if not prompt:
+            continue
+        cwe = ""
+        m = re.match(r"(CWE-\d+)", str(row.get("ID", "")))
+        if m:
+            cwe = m.group(1)
+        samples.append(
+            Sample(
+                index=idx,
+                prompt=prompt,
+                target=cwe,
+                metadata={
+                    "task_type": "securityeval",
+                    "language": "python",
+                    "cwe_identifier": cwe,
+                    "id": row.get("ID", ""),
+                },
+            )
+        )
+    return samples
+
+
 # -- Native-Arabic MCQ (local JSONL) -----------------------------------------
 
 # Arabic system prompt + letter-only rendering, verbatim from the project's
