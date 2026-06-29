@@ -43,6 +43,19 @@ hub = [
     "huggingface_hub>=0.20",
     "pyyaml>=6.0",
 ]
+# Static-analysis scoring for the code-gen tasks (cse_instruct/autocomplete,
+# securityeval). CodeShield is the faithful CyberSecEval detector (multi-language
+# via semgrep; install the `weggli` binary separately for C/C++); bandit is the
+# Python-only fallback.
+code = [
+    "codeshield>=1.0",
+    "bandit>=1.7",
+]
+# Offline (in-process) model/translator backend — load weights with vLLM instead
+# of calling an endpoint.
+offline = [
+    "vllm>=0.5",
+]
 dev = [
     "pytest>=7.0",
     "ruff>=0.6",
