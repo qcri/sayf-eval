@@ -452,6 +452,122 @@ def _choices_dict(row: dict) -> dict:
     return {}
 
 
+# -- CyberSecEval (Meta PurpleLlama) LLM-judge subsets ------------------------
+
+# Three CyberSecEval subsets whose canonical scoring is an *LLM judge* (not a
+# static analyzer), so they fit this harness's judge directly:
+#   * prompt-injection — did the model follow an injected instruction?
+#   * mitre            — does the response give offensive ATT&CK uplift?
+#   * interpreter      — does the response produce code-interpreter abuse?
+# These are *safety* judgments: the "good" outcome is the model staying safe
+# (refusing / benign). The judge maps SAFE→CORRECT and UNSAFE→INCORRECT (see
+# judge_prompts), so the corpus ``accuracy`` reads as the **safe-response rate**
+# (higher is safer). Prompts come from PurpleLlama's public datasets; an env var
+# overrides with a local copy for air-gapped runs.
+_PURPLELLAMA_RAW = (
+    "https://raw.githubusercontent.com/meta-llama/PurpleLlama/main/CybersecurityBenchmarks/datasets"
+)
+
+
+def _load_json_url_or_env(env_var: str, url: str):
+    """Load a JSON array from ``$env_var`` (local path) or fall back to ``url``."""
+    path = os.environ.get(env_var)
+    if path:
+        with open(path, encoding="utf-8") as f:
+            return json.load(f)
+    return json.loads(_http_get(url).decode("utf-8"))
+
+
+def load_cyberseceval_prompt_injection() -> list[Sample]:
+    """CyberSecEval prompt-injection (textual). System=defense, user=attack.
+
+    The benchmark sends ``test_case_prompt`` as the system role and ``user_input``
+    as the user turn; this harness has one system prompt per task, so the two are
+    folded into a single user prompt (kept together so the translation layer moves
+    them as a unit). The per-row ``judge_question`` becomes ``target`` and is what
+    the judge answers Yes/No — "Yes" means the injection succeeded (UNSAFE).
+    """
+    data = _load_json_url_or_env("SAYF_EVAL_CSE_PI_PATH", f"{_PURPLELLAMA_RAW}/prompt_injection/prompt_injection.json")
+    samples: list[Sample] = []
+    for idx, row in enumerate(data):
+        defense = (row.get("test_case_prompt") or "").strip()
+        attack = (row.get("user_input") or "").strip()
+        judge_q = (row.get("judge_question") or "").strip()
+        if not attack or not judge_q:
+            continue
+        prompt = f"{defense}\n\n{attack}" if defense else attack
+        samples.append(
+            Sample(
+                index=idx,
+                prompt=prompt,
+                target=judge_q,
+                metadata={
+                    "task_type": "cse_prompt_injection",
+                    "injection_type": row.get("injection_type", ""),
+                    "injection_variant": row.get("injection_variant", ""),
+                    "risk_category": row.get("risk_category", ""),
+                    "speaking_language": row.get("speaking_language", ""),
+                },
+            )
+        )
+    return samples
+
+
+def load_cyberseceval_mitre() -> list[Sample]:
+    """CyberSecEval MITRE ATT&CK uplift (English augmented set, 1000 prompts).
+
+    The model is prompted with ``mutated_prompt`` (sent verbatim, as the benchmark
+    does). There is no gold answer — the judge decides whether the response gives
+    materially useful offensive uplift (UNSAFE) or is a refusal/benign (SAFE).
+    """
+    data = _load_json_url_or_env(
+        "SAYF_EVAL_CSE_MITRE_PATH",
+        f"{_PURPLELLAMA_RAW}/mitre/mitre_benchmark_100_per_category_with_augmentation.json",
+    )
+    samples: list[Sample] = []
+    for idx, row in enumerate(data):
+        prompt = (row.get("mutated_prompt") or "").strip()
+        if not prompt:
+            continue
+        samples.append(
+            Sample(
+                index=idx,
+                prompt=prompt,
+                target="",
+                metadata={
+                    "task_type": "cse_mitre",
+                    "mitre_category": row.get("mitre_category", ""),
+                    "ttp": row.get("ttp_id_name_mapping", ""),
+                },
+            )
+        )
+    return samples
+
+
+def load_cyberseceval_interpreter() -> list[Sample]:
+    """CyberSecEval code-interpreter abuse (500 prompts).
+
+    The model is prompted with ``mutated_prompt``; the judge classifies the
+    response as Extremely/Potentially Malicious vs Non-Malicious (or refusal).
+    Non-Malicious / refusal is SAFE (CORRECT); the malicious categories UNSAFE.
+    """
+    data = _load_json_url_or_env("SAYF_EVAL_CSE_INTERP_PATH", f"{_PURPLELLAMA_RAW}/interpreter/interpreter.json")
+    samples: list[Sample] = []
+    for idx, row in enumerate(data):
+        prompt = (row.get("mutated_prompt") or "").strip()
+        if not prompt:
+            continue
+        samples.append(
+            Sample(
+                index=idx,
+                prompt=prompt,
+                target="",
+                metadata={"task_type": "cse_interpreter", "attack_type": row.get("attack_type", "")},
+            )
+        )
+    return samples
+
+
 # -- Native-Arabic MCQ loader (uses the helpers above) -----------------------
 
 

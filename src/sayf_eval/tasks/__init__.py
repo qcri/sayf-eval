@@ -83,6 +83,16 @@ _reg("cissp", "mcq", ds.load_cissp, None, 1024)
 # Judged semantically; open-ended JSON/text outputs need a larger budget.
 _reg("sevenllm", "sevenllm", ds.load_sevenllm, None, 2000)
 
+# ── CyberSecEval (Meta PurpleLlama) — LLM-judge safety subsets ───────────────
+# Prompts pulled from PurpleLlama's public datasets (or a local copy via
+# SAYF_EVAL_CSE_*_PATH). No gold answer — the judge makes a safety call and the
+# reported ``accuracy`` is the safe-response rate (higher = safer). These run
+# through the translation layer like every other task. (The insecure-code-gen
+# subsets, which need a static analyzer, are intentionally out of scope here.)
+_reg("cse_prompt_injection", "cse_prompt_injection", ds.load_cyberseceval_prompt_injection, None, 512)
+_reg("cse_mitre", "cse_mitre", ds.load_cyberseceval_mitre, None, 1024)
+_reg("cse_interpreter", "cse_interpreter", ds.load_cyberseceval_interpreter, None, 1024)
+
 # ── Native-Arabic MCQ (local JSONL; Arabic system prompt) ────────────────────
 # Path via env var. Run as-is for native Arabic, or with --translator
 # --translator-lang en for the translate-test baseline.
