@@ -27,7 +27,7 @@ _REDSAGE = "RISys-Lab/Benchmarks_CyberSec_RedSageMCQ"
 _ATHENA = "https://github.com/Athena-Software-Group/athenabench/raw/main/benchmark"
 
 
-def _reg(name, task_type, loader, system_prompt=None, max_tokens=1024):
+def _reg(name, task_type, loader, system_prompt=None, max_tokens=1024, scorer_kind=""):
     register(
         Task(
             name=name,
@@ -35,6 +35,7 @@ def _reg(name, task_type, loader, system_prompt=None, max_tokens=1024):
             loader=loader,
             system_prompt=system_prompt,
             max_tokens=max_tokens,
+            scorer_kind=scorer_kind,
         )
     )
 
@@ -81,3 +82,9 @@ _reg("cissp", "mcq", ds.load_cissp, None, 1024)
 # ── SEvenLLM (open-ended structured CTI extraction / analysis) ────────────────
 # Judged semantically; open-ended JSON/text outputs need a larger budget.
 _reg("sevenllm", "sevenllm", ds.load_sevenllm, None, 2000)
+
+# ── Native-Arabic MCQ (local JSONL; Arabic system prompt) ────────────────────
+# Path via env var. Run as-is for native Arabic, or with --translator
+# --translator-lang en for the translate-test baseline.
+_reg("ar_native_mcq", "mcq", ds.make_local_mcq_loader("SAYF_EVAL_AR_NATIVE_PATH"), ds.SYS_AR, 256)
+_reg("cissp_ar", "mcq", ds.make_local_mcq_loader("SAYF_EVAL_CISSP_AR_PATH"), ds.SYS_AR, 1024)

@@ -24,6 +24,7 @@ from sayf_eval import metrics
 from sayf_eval.model import GenParams, Model
 from sayf_eval.scorer import JudgeScorer
 from sayf_eval.task import Sample, Task
+from sayf_eval.translate import Translator
 
 
 @dataclass
@@ -37,10 +38,10 @@ class RunConfig:
     # for thinking models that emit reasoning)
 
 
-def _messages(task: Task, sample: Sample) -> list[dict]:
+def _messages(task: Task, sample: Sample, system_prompt: str | None) -> list[dict]:
     msgs: list[dict] = []
-    if task.system_prompt:
-        msgs.append({"role": "system", "content": task.system_prompt})
+    if system_prompt:
+        msgs.append({"role": "system", "content": system_prompt})
     msgs.append({"role": "user", "content": sample.prompt})
     return msgs
 
@@ -65,16 +66,26 @@ def run_inference(
     model: Model,
     output_dir: str,
     config: RunConfig | None = None,
+    translator: Translator | None = None,
 ) -> str:
-    """Generate model responses for ``task``; return the responses JSONL path."""
+    """Generate model responses for ``task``; return the responses JSONL path.
+
+    When ``translator`` is given, the loaded samples and the task system prompt are
+    rewritten into the translator's target language before inference. Ground truth
+    and choices are untouched, so judging and metrics are unchanged.
+    """
     config = config or RunConfig()
     out_path = os.path.join(output_dir, f"{task.name}_responses.jsonl")
     if os.path.exists(out_path) and not config.overwrite:
         return out_path
 
     samples = task.load(config.max_samples)
+    system_prompt = task.system_prompt
+    if translator is not None:
+        samples = translator.translate_samples(task, samples)
+        system_prompt = translator.system_prompt(task)
     params = GenParams(max_tokens=config.max_tokens or task.max_tokens)
-    batch = [_messages(task, s) for s in samples]
+    batch = [_messages(task, s, system_prompt) for s in samples]
     responses = model.generate_batch(batch, params)
 
     rows = [
@@ -101,8 +112,14 @@ def run_judge(
     scorer: JudgeScorer,
     output_dir: str,
     config: RunConfig | None = None,
+    code_scorer=None,
 ) -> dict:
-    """Judge collected responses; write detailed JSONL; return corpus scores."""
+    """Judge collected responses; write detailed JSONL; return corpus scores.
+
+    Code-generation tasks (``task.scorer_kind == "code"``) are routed to
+    ``code_scorer`` (a :class:`~sayf_eval.codescore.CodeScorer`, static analysis)
+    instead of the LLM ``scorer``; everything downstream is identical.
+    """
     config = config or RunConfig()
     rows_in = _read_jsonl(responses_path)
 
@@ -113,11 +130,21 @@ def run_judge(
             "model_answer": r.get("model_response", ""),
             "target": r.get("ground_truth", ""),
             "choices": (r.get("metadata") or {}).get("choices"),
+            "metadata": r.get("metadata") or {},
             "answer_stop": config.answer_stop,
         }
         for r in rows_in
     ]
-    verdicts = scorer.score_batch(items)
+    if task.scorer_kind == "code":
+        if code_scorer is None:
+            raise ValueError(
+                f"Task {task.name!r} is a code-gen task (scorer_kind='code') but no code scorer was "
+                "provided. Pass --code-analyzer (bandit|codeshield|auto)."
+            )
+        active = code_scorer
+    else:
+        active = scorer
+    verdicts = active.score_batch(items)
 
     detailed: list[dict] = []
     for r, v in zip(rows_in, verdicts):
@@ -149,9 +176,11 @@ def run_task(
     scorer: JudgeScorer,
     output_dir: str,
     config: RunConfig | None = None,
+    translator: Translator | None = None,
+    code_scorer=None,
 ) -> dict:
-    responses_path = run_inference(task, model, output_dir, config)
-    return run_judge(task, responses_path, scorer, output_dir, config)
+    responses_path = run_inference(task, model, output_dir, config, translator)
+    return run_judge(task, responses_path, scorer, output_dir, config, code_scorer)
 
 
 def run_tasks(
@@ -160,11 +189,13 @@ def run_tasks(
     scorer: JudgeScorer,
     output_dir: str,
     config: RunConfig | None = None,
+    translator: Translator | None = None,
+    code_scorer=None,
 ) -> dict:
     """Run several tasks; write ``summary.json``; return the summary dict."""
     summary: dict[str, dict] = {}
     for task in tasks:
-        summary[task.name] = run_task(task, model, scorer, output_dir, config)
+        summary[task.name] = run_task(task, model, scorer, output_dir, config, translator, code_scorer)
     os.makedirs(output_dir, exist_ok=True)
     with open(os.path.join(output_dir, "summary.json"), "w") as f:
         json.dump(summary, f, indent=2)

@@ -416,3 +416,79 @@ def load_sevenllm() -> list[Sample]:
             )
         )
     return samples
+
+
+# -- Native-Arabic MCQ (local JSONL) -----------------------------------------
+
+# Arabic system prompt + letter-only rendering, verbatim from the project's
+# eval_tri_mcq.py (SYS_AR / build_prompt_single). Used for benchmarks that are
+# *natively* Arabic (no translation), e.g. arabic-native-cyber-mcq, and for
+# Arabic-translated local sets (CISSP-Arabic). The English baseline (--translator
+# none) runs them as-is; --translator llm --translator-lang en gives translate-test.
+SYS_AR = (
+    "أنت خبير في الأمن السيبراني.\n"
+    "سيتم تزويدك بسؤال اختيار من متعدد مع أربع خيارات A–D.\n"
+    "اختر أفضل إجابة واحدة فقط، وأجب بحرف واحد فقط من (A أو B أو C أو D) بدون أي شرح."
+)
+
+
+def _render_mcq_letter(question: str, choices: dict) -> str:
+    """Question + options rendered as one block (ported from build_prompt_single)."""
+    text = "Question:\n" + (question or "").strip() + "\n\n"
+    for k in ["A", "B", "C", "D"]:
+        if k in choices and str(choices[k]).strip():
+            text += f"{k}: {choices[k]}\n"
+    text += "\nReply ONLY with the letter (A, B, C, or D)."
+    return text
+
+
+def _choices_dict(row: dict) -> dict:
+    """Coerce a row's options (dict or list, several key spellings) to {A..D: str}."""
+    opts = row.get("options") or row.get("choices") or row.get("answers") or {}
+    if isinstance(opts, list):
+        return {_LETTERS[i]: str(o) for i, o in enumerate(opts[:5])}
+    if isinstance(opts, dict):
+        return {str(k).strip().upper(): str(v) for k, v in opts.items()}
+    return {}
+
+
+# -- Native-Arabic MCQ loader (uses the helpers above) -----------------------
+
+
+def make_local_mcq_loader(env_var: str) -> Callable[[], list[Sample]]:
+    """Loader for a local Arabic MCQ JSONL whose path comes from ``env_var``.
+
+    Accepts the project's native schema (``question``, ``options`` {A–D},
+    ``answer``, ``source``) and tolerant variants. Question and options are kept
+    together in one rendered prompt so the translation layer can translate them as
+    a unit.
+    """
+
+    def loader() -> list[Sample]:
+        path = os.environ.get(env_var)
+        if not path:
+            raise ValueError(f"Set {env_var} to a local Arabic MCQ JSONL path.")
+        samples: list[Sample] = []
+        with open(path, encoding="utf-8") as f:
+            for idx, line in enumerate(f):
+                line = line.strip()
+                if not line:
+                    continue
+                row = json.loads(line)
+                question = row.get("question") or row.get("Question") or ""
+                choices = _choices_dict(row)
+                gt = _normalize_gt(row)
+                if not question or not choices:
+                    continue
+                samples.append(
+                    Sample(
+                        index=idx,
+                        prompt=_render_mcq_letter(question, choices),
+                        target=gt,
+                        choices=_choices_to_list(choices),
+                        metadata={"task_type": "mcq", "source": row.get("source", ""), "lang": "ar"},
+                    )
+                )
+        return samples
+
+    return loader
