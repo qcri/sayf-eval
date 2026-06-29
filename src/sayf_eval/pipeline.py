@@ -36,6 +36,8 @@ class RunConfig:
     overwrite: bool = False
     max_tokens: int | None = None  # override per-task budget (e.g. scale up
     # for thinking models that emit reasoning)
+    mcq_render: str = "default"  # "letter" re-renders MCQ prompts (EN-side parity
+    # with --ar-render seedmini)
 
 
 def _messages(task: Task, sample: Sample, system_prompt: str | None) -> list[dict]:
@@ -80,6 +82,13 @@ def run_inference(
         return out_path
 
     samples = task.load(config.max_samples)
+    if config.mcq_render == "letter":
+        # EN-side parity with --ar-render seedmini: render MCQ prompts in the
+        # Question:/A:/.. layout. Set only on the run that needs it (e.g. the EN
+        # baseline); AR runs let the translator own rendering.
+        from sayf_eval.gemma_translate import re_render_letter
+
+        samples = re_render_letter(samples)
     system_prompt = task.system_prompt
     if translator is not None:
         samples = translator.translate_samples(task, samples)

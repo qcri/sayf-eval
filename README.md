@@ -224,6 +224,34 @@ sayf-eval run --tasks mcq --model Qwen/Qwen3-8B --model-backend offline-vllm \
   --output-dir outputs/qwen3-8b
 ```
 
+### Arabic MCQ rendering (a studyable variable)
+
+For Arabic MCQ runs, *how* the prompt is rendered is itself an experimental
+variable — `--ar-render` selects it, so you can measure the rendering's own effect:
+
+| `--ar-render` | What becomes Arabic | EN run | Reuses your Gemma files |
+|---------------|---------------------|--------|--------------------------|
+| `seedmini` | system prompt (`SYS_AR`) + question + choices, `Question:/A:/..` layout (reproduces `eval_tri_mcq.py`) | render the EN run with `--mcq-render letter` to match | yes |
+| `harness` | question + choices only; the task's English wrapper + system prompt stay (one manipulated variable — cleanest control) | unchanged | yes |
+| `fullprompt` | the whole rendered prompt, translated live (incl. wrapper) | unchanged | no (re-translates) |
+
+`seedmini`/`harness` take Arabic fields from your pre-built Gemma3 files
+(`--gemma-map '{task: file.jsonl}'`, content-matched to each English item) and
+fall back to a **live** Gemma translation (`--translator-model` / `--translator-base-url`)
+for items not in the files — write-through via `--translator-write-cache` so live
+translations are reused. `fullprompt` is the whole-prompt `--translator llm` path.
+
+```bash
+# harness rendering: Arabic question/choices, English wrapper; Gemma files + live fallback
+sayf-eval run --tasks cybermetric secbench --model openai/gpt-4o --judge openai/gpt-4o \
+  --ar-render harness --gemma-map scripts/gemma_map.example.json \
+  --translator-model hosted_vllm/gemma-3-27b-it --translator-base-url http://HOST:PORT/v1 \
+  --output-dir outputs/gpt4o/ar-harness
+```
+
+`scripts/run_mcq_baselines.sh` drives the EN + AR pair for a chosen `AR_RENDER`
+across the MCQ knowledge set (and handles the `seedmini` EN-parity rendering).
+
 ## Standardized pipeline choices
 
 sayf-eval applies fixed, documented choices that remove measurement artifacts

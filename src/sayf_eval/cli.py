@@ -49,9 +49,41 @@ def _build_model(args):
     )
 
 
+def _build_gemma_translator(args, render: str):
+    """Build a Gemma field-level Arabic translator (--ar-render seedmini|harness)."""
+    from sayf_eval.gemma_translate import (
+        GemmaArabicTranslator,
+        GemmaFieldStore,
+        load_gemma_map,
+        make_live_field_translator,
+    )
+
+    store = GemmaFieldStore(load_gemma_map(args.gemma_map)) if getattr(args, "gemma_map", None) else None
+    live = None
+    if getattr(args, "translator_model", None):
+        gemma = Model(
+            model=args.translator_model,
+            base_url=args.translator_base_url or getattr(args, "base_url", None),
+            api_key=args.translator_api_key or getattr(args, "api_key", None),
+            concurrency=args.concurrency,
+        )
+        live = make_live_field_translator(gemma)
+    if store is None and live is None:
+        sys.exit("--ar-render seedmini|harness needs --gemma-map and/or --translator-model (live fallback).")
+    return GemmaArabicTranslator(render, store=store, live=live, write_cache_dir=args.translator_write_cache)
+
+
 def _build_translator(args):
     """Build the translation layer, or ``None`` for the English baseline."""
     from sayf_eval.translate import build_translator
+
+    # --ar-render takes precedence over --translator: it selects the Arabic path.
+    render = getattr(args, "ar_render", None)
+    if render in ("seedmini", "harness"):
+        return _build_gemma_translator(args, render)
+    if render == "fullprompt":
+        args.translator = "llm"  # whole-prompt live translation
+        args.translator_lang = "ar"
 
     kind = getattr(args, "translator", "none")
     if kind == "none":
@@ -198,6 +230,29 @@ def _add_translator_args(p: argparse.ArgumentParser) -> None:
         "--translator-model-aware",
         action="store_true",
         help="Use the per-model MCQ translation prompts (Fanar/LLaMA/GPT-OSS).",
+    )
+    # -- Gemma-backed Arabic MCQ rendering (study the rendering as a variable) --
+    p.add_argument(
+        "--ar-render",
+        choices=["seedmini", "harness", "fullprompt"],
+        default=None,
+        help="Arabic MCQ rendering (overrides --translator when set). "
+        "seedmini=letter render + Arabic SYS_AR (reuses eval_tri_mcq.py; pair the EN run with "
+        "--mcq-render letter); harness=keep the task's English wrapper, swap only question/choices "
+        "to Arabic; fullprompt=translate the whole prompt live (== --translator llm).",
+    )
+    p.add_argument(
+        "--gemma-map",
+        default=None,
+        help="JSON {task: gemma3.jsonl} of pre-built field-level Arabic translations "
+        "(used by --ar-render seedmini|harness; store miss falls back to live --translator-model).",
+    )
+    p.add_argument(
+        "--mcq-render",
+        choices=["default", "letter"],
+        default="default",
+        help="Re-render MCQ prompts: default (task's own) or letter (Question:/A:/.. — "
+        "use letter on the EN run to match --ar-render seedmini).",
     )
 
 
@@ -415,6 +470,7 @@ def main(argv: list[str] | None = None) -> int:
         answer_stop=args.answer_stop,
         overwrite=args.overwrite,
         max_tokens=args.max_tokens,
+        mcq_render=getattr(args, "mcq_render", "default"),
     )
 
     if args.cmd == "run-inference":
