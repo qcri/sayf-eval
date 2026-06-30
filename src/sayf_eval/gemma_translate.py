@@ -151,7 +151,9 @@ class GemmaArabicTranslator:
 
     target_lang = "ar"
 
-    def __init__(self, render: str, store: GemmaFieldStore | None = None, live=None, write_cache_dir: str | None = None):
+    def __init__(
+        self, render: str, store: GemmaFieldStore | None = None, live=None, write_cache_dir: str | None = None
+    ):
         if render not in ("seedmini", "harness"):
             raise ValueError(f"GemmaArabicTranslator render must be seedmini|harness, got {render!r}.")
         self.render = render

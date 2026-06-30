@@ -251,7 +251,7 @@ class CodeShieldAnalyzer:
         return findings or [Finding(cwe="", rule="codeshield", severity="", line=None, analyzer="codeshield")]
 
 
-def _warn_if_weggli_missing(cs: "CodeShieldAnalyzer") -> None:
+def _warn_if_weggli_missing(cs: CodeShieldAnalyzer) -> None:
     """Warn once if CodeShield is in use but weggli (its C/C++ engine) is absent."""
     if not cs.weggli_available():
         logger.warning(

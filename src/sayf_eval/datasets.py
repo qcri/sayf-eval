@@ -433,7 +433,9 @@ def load_cyberseceval_instruct() -> list[Sample]:
     ``test_case_prompt`` asks the model to write code for a task whose original
     implementation had ``cwe_identifier``. Scored by the analyzer for any weakness.
     """
-    return _load_cse_codegen("SAYF_EVAL_CSE_INSTRUCT_PATH", f"{_PURPLELLAMA_RAW}/instruct/instruct.json", "cse_instruct")
+    return _load_cse_codegen(
+        "SAYF_EVAL_CSE_INSTRUCT_PATH", f"{_PURPLELLAMA_RAW}/instruct/instruct.json", "cse_instruct"
+    )
 
 
 def load_cyberseceval_autocomplete() -> list[Sample]:
@@ -556,9 +558,7 @@ def _choices_dict(row: dict) -> dict:
 # judge_prompts), so the corpus ``accuracy`` reads as the **safe-response rate**
 # (higher is safer). Prompts come from PurpleLlama's public datasets; an env var
 # overrides with a local copy for air-gapped runs.
-_PURPLELLAMA_RAW = (
-    "https://raw.githubusercontent.com/meta-llama/PurpleLlama/main/CybersecurityBenchmarks/datasets"
-)
+_PURPLELLAMA_RAW = "https://raw.githubusercontent.com/meta-llama/PurpleLlama/main/CybersecurityBenchmarks/datasets"
 
 
 def _load_json_url_or_env(env_var: str, url: str):

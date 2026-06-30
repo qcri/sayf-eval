@@ -66,8 +66,13 @@ class OfflineVLLMModel:
         }
         if max_model_len is not None:
             kwargs["max_model_len"] = max_model_len
-        logger.info("[vLLM offline] loading %s (tp=%d, gpu_mem=%.2f, max_len=%s)",
-                    model, tensor_parallel_size, gpu_memory_utilization, max_model_len)
+        logger.info(
+            "[vLLM offline] loading %s (tp=%d, gpu_mem=%.2f, max_len=%s)",
+            model,
+            tensor_parallel_size,
+            gpu_memory_utilization,
+            max_model_len,
+        )
         self._llm = LLM(**kwargs)
 
     # -- params --------------------------------------------------------------

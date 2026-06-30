@@ -298,9 +298,7 @@ def build_translator(
             m = OfflineVLLMModel(model=model, **(offline or {}))
         else:
             m = Model(model=model, base_url=base_url, api_key=api_key, concurrency=concurrency)
-        return LLMTranslator(
-            m, target_lang=target_lang, model_aware=model_aware, write_cache_dir=write_cache_dir
-        )
+        return LLMTranslator(m, target_lang=target_lang, model_aware=model_aware, write_cache_dir=write_cache_dir)
     if kind == "cache":
         if not cache_dir:
             raise ValueError("--translator cache requires --translator-cache-dir.")

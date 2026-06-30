@@ -168,7 +168,9 @@ def _add_common(p: argparse.ArgumentParser) -> None:
 
 
 def _add_model_args(p: argparse.ArgumentParser) -> None:
-    p.add_argument("--model", required=True, help="Model id/path (LiteLLM string for endpoint; checkpoint for offline-vllm).")
+    p.add_argument(
+        "--model", required=True, help="Model id/path (LiteLLM string for endpoint; checkpoint for offline-vllm)."
+    )
     p.add_argument(
         "--model-backend",
         choices=["endpoint", "offline-vllm"],
@@ -366,7 +368,9 @@ def _cmd_translate(args) -> int:
                 row = {"index": s.index, "prompt": s.prompt, "system_prompt": system_prompt}
                 f.write(_json.dumps(row, ensure_ascii=False) + "\n")
         print(f"{task.name}: {len(out)} translated → {path}")
-    print(f"\nTranslation cache → {args.output_dir} (run with --translator cache --translator-cache-dir {args.output_dir})")
+    print(
+        f"\nTranslation cache → {args.output_dir} (run with --translator cache --translator-cache-dir {args.output_dir})"
+    )
     return 0
 
 
