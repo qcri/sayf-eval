@@ -38,5 +38,9 @@ def test_registry_covers_full_suite():
     assert len(tasks) >= 24
     for n in tasks:
         t = get_task(n)
-        # every task_type must resolve a judge prompt
+        # Code-gen tasks (scorer_kind="code") are scored by static analysis, not
+        # the judge, so they have no judge prompt — skip them.
+        if getattr(t, "scorer_kind", "") == "code":
+            continue
+        # every judged task_type must resolve a judge prompt
         create_judge_prompt(t.task_type, "q", "a", "g", {"choices": "A. x"})
