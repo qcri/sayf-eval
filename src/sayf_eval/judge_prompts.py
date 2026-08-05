@@ -19,7 +19,11 @@ from __future__ import annotations
 
 
 # task_type -> (format_hint, compare_rule). MCQ-family types share one entry.
-_MCQ_TYPES = ("mcq", "cybermetric", "cissp", "mmlu_cs", "secure", "secbench", "ckt")
+# Only task_type values that actually reach the judge are listed. Most MCQ
+# benchmarks (cybermetric, cissp, mmlu-cs, secbench, redsage_*) register with
+# task_type="mcq"; ``secure`` and ``ckt`` keep a distinct task_type but are
+# judged with the same MCQ rule.
+_MCQ_TYPES = ("mcq", "secure", "ckt")
 
 _MCQ_RULE = (
     "a single uppercase letter (A, B, C, D, or E)",

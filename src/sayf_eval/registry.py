@@ -2,9 +2,9 @@
 
 The registry maps a task name to a :class:`~sayf_eval.task.Task`. Each entry binds
 the unified prompt/system prompt, the calibrated token budget, a lazy dataset
-loader (from ``datasets.py``), and the scorer kind. MVP entries (``mcq``,
-``seceval``, ``vsp``, ``taa``) are added in Phase 2; the remaining ~20 tasks in
-Phase 3. This module stays import-light: loaders are referenced, not invoked.
+loader (from ``datasets.py``), and the scorer kind. The full suite is registered
+by importing ``sayf_eval.tasks``. This module stays import-light: loaders are
+referenced, not invoked, so importing the registry triggers no dataset downloads.
 """
 
 from __future__ import annotations
@@ -12,8 +12,8 @@ from __future__ import annotations
 from sayf_eval.task import Task
 
 
-# Populated as tasks are ported. Keep registrations in datasets-adjacent modules
-# or register here directly via ``register(Task(...))``.
+# Populated by importing ``sayf_eval.tasks`` (which calls ``register`` for each
+# task). Kept empty here so importing the registry alone pulls in no loaders.
 TASKS: dict[str, Task] = {}
 
 
