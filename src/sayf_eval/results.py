@@ -67,6 +67,10 @@ class ResultsRecord:
     pipeline: dict  # the decoding/scoring config that produced the scores
     results: dict  # {task: {accuracy, correct, total, skipped, ...}}
     tasks: list[str]
+    # {task: source_data dict} — declared dataset provenance per task (see
+    # Task.source). Makes the record self-describing so downstream exporters need
+    # no knowledge of sayf-eval internals. Carries no prompt/gold/response text.
+    task_sources: dict = field(default_factory=dict)
     sayf_eval_version: str = __version__
     schema_version: str = SCHEMA_VERSION
     created_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
@@ -85,11 +89,14 @@ def build_record(
     judge_base_url: str | None = None,
     max_tokens_override: int | None = None,
     answer_stop: list[str] | None = None,
+    task_sources: dict[str, dict] | None = None,
 ) -> ResultsRecord:
     """Assemble the scores record from a run summary + the pipeline configuration.
 
     ``summary`` is the ``run_tasks`` output: ``{task: {accuracy, correct, total,
-    skipped, ...}}`` — aggregates only, no per-item text.
+    skipped, ...}}`` — aggregates only, no per-item text. ``task_sources`` maps
+    each task to its declared dataset provenance (``Task.source``); it is stored
+    verbatim so the record is self-describing.
     """
     pipeline = {
         "temperature": gen_params.temperature,
@@ -108,6 +115,7 @@ def build_record(
         pipeline=pipeline,
         results=summary,
         tasks=sorted(summary.keys()),
+        task_sources=task_sources or {},
     )
 
 

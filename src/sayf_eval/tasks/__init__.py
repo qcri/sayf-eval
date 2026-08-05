@@ -26,9 +26,35 @@ _SECURE = "RISys-Lab/Benchmarks_CyberSec_SECURE"
 _SECBENCH = "RISys-Lab/Benchmarks_CyberSec_SecBench"
 _REDSAGE = "RISys-Lab/Benchmarks_CyberSec_RedSageMCQ"
 _ATHENA = "https://github.com/Athena-Software-Group/athenabench/raw/main/benchmark"
+# Bespoke-loader sources (mirror the identifiers used in datasets.py loaders).
+_CYBERMETRIC_HF = "RISys-Lab/Benchmarks_CyberSec_CyberMetrics"
+_SECEVAL_HF = "XuanwuAI/SecEval"
+_MMLU_HF = "lighteval/mmlu"
+_SEVENLLM_HF = "Multilingual-Multimodal-NLP/SEVENLLM-Dataset"
+_CTI_TAA_URL = "https://raw.githubusercontent.com/maveryn/cti-bench/main/data/cti-taa.tsv"
 
 
-def _reg(name, task_type, loader, system_prompt=None, max_tokens=1024):
+# ── Declared dataset provenance (see Task.source). One of three neutral shapes;
+#    downstream exporters (e.g. the Every Eval Ever converter) map these onto
+#    their own source_data schema. ──────────────────────────────────────────────
+def _hf_source(repo, subset, name, split="test"):
+    src = {"type": "hf_dataset", "dataset_name": name, "hf_repo": repo}
+    if subset:
+        src["subset"] = subset
+    if split:
+        src["split"] = split
+    return src
+
+
+def _url_source(url, name):
+    return {"type": "url", "dataset_name": name, "url": [url]}
+
+
+def _other_source(name):
+    return {"type": "other", "dataset_name": name}
+
+
+def _reg(name, task_type, loader, system_prompt=None, max_tokens=1024, source=None):
     register(
         Task(
             name=name,
@@ -36,24 +62,81 @@ def _reg(name, task_type, loader, system_prompt=None, max_tokens=1024):
             loader=loader,
             system_prompt=system_prompt,
             max_tokens=max_tokens,
+            source=source,
         )
     )
 
 
 # ── CTI-Bench (RISys-Lab HF) — domain system prompt ──────────────────────────
-_reg("mcq", "mcq", ds.make_hf_loader("mcq", _HF, "cti-mcq", "mcq"), _CTI, 1024)
-_reg("rcm", "rcm", ds.make_hf_loader("rcm", _HF, "cti-rcm", "rcm"), _CTI, 512)
-_reg("vsp", "vsp", ds.make_hf_loader("vsp", _HF, "cti-vsp", "vsp"), _CTI, 2048)
-_reg("ate", "ate", ds.make_hf_loader("ate", _HF, "cti-ate", "ate"), _CTI, 1024)
-_reg("cti_taa", "taa", ds.load_cti_taa, _CTI, 512)
+_reg(
+    "mcq",
+    "mcq",
+    ds.make_hf_loader("mcq", _HF, "cti-mcq", "mcq"),
+    _CTI,
+    1024,
+    _hf_source(_HF, "cti-mcq", "CTI-Bench MCQ"),
+)
+_reg(
+    "rcm",
+    "rcm",
+    ds.make_hf_loader("rcm", _HF, "cti-rcm", "rcm"),
+    _CTI,
+    512,
+    _hf_source(_HF, "cti-rcm", "CTI-Bench RCM (CWE mapping)"),
+)
+_reg(
+    "vsp",
+    "vsp",
+    ds.make_hf_loader("vsp", _HF, "cti-vsp", "vsp"),
+    _CTI,
+    2048,
+    _hf_source(_HF, "cti-vsp", "CTI-Bench VSP (CVSS)"),
+)
+_reg(
+    "ate",
+    "ate",
+    ds.make_hf_loader("ate", _HF, "cti-ate", "ate"),
+    _CTI,
+    1024,
+    _hf_source(_HF, "cti-ate", "CTI-Bench ATE (ATT&CK)"),
+)
+_reg("cti_taa", "taa", ds.load_cti_taa, _CTI, 512, _url_source(_CTI_TAA_URL, "CTI-Bench TAA"))
 
 # ── SECURE (ICS/OT MCQ) — Prompt prebuilt, no system prompt ──────────────────
-_reg("secure_maet", "secure", ds.make_hf_loader("secure_maet", _SECURE, "MAET", "secure"), None, 256)
-_reg("secure_cwet", "secure", ds.make_hf_loader("secure_cwet", _SECURE, "CWET", "secure"), None, 256)
-_reg("secure_kcv", "secure", ds.make_hf_loader("secure_kcv", _SECURE, "KCV", "secure"), None, 256)
+_reg(
+    "secure_maet",
+    "secure",
+    ds.make_hf_loader("secure_maet", _SECURE, "MAET", "secure"),
+    None,
+    256,
+    _hf_source(_SECURE, "MAET", "SECURE MAET"),
+)
+_reg(
+    "secure_cwet",
+    "secure",
+    ds.make_hf_loader("secure_cwet", _SECURE, "CWET", "secure"),
+    None,
+    256,
+    _hf_source(_SECURE, "CWET", "SECURE CWET"),
+)
+_reg(
+    "secure_kcv",
+    "secure",
+    ds.make_hf_loader("secure_kcv", _SECURE, "KCV", "secure"),
+    None,
+    256,
+    _hf_source(_SECURE, "KCV", "SECURE KCV"),
+)
 
 # ── SecBench (English MCQ) — RedSage wording, no system prompt ────────────────
-_reg("secbench", "mcq", ds.make_hf_loader("secbench", _SECBENCH, "MCQs_English", "mcq"), None, 256)
+_reg(
+    "secbench",
+    "mcq",
+    ds.make_hf_loader("secbench", _SECBENCH, "MCQs_English", "mcq"),
+    None,
+    256,
+    _hf_source(_SECBENCH, "MCQs_English", "SecBench MCQ (English)"),
+)
 
 # ── RedSage MCQ (5 subsets) — no system prompt ───────────────────────────────
 for _key, _sub in [
@@ -63,22 +146,88 @@ for _key, _sub in [
     ("redsage_cli", "cybersecurity_tools_cli"),
     ("redsage_kali", "cybersecurity_tools_kali"),
 ]:
-    _reg(_key, "mcq", ds.make_hf_loader(_key, _REDSAGE, _sub, "mcq"), None, 256)
+    _reg(
+        _key,
+        "mcq",
+        ds.make_hf_loader(_key, _REDSAGE, _sub, "mcq"),
+        None,
+        256,
+        _hf_source(_REDSAGE, _sub, f"RedSage: {_sub}"),
+    )
 
 # ── AthenaBench (GitHub JSONL) — no system prompt ────────────────────────────
-_reg("ckt", "ckt", ds.make_athena_loader(f"{_ATHENA}/athena-cti-ckt-3k.jsonl", "ckt"), None, 1024)
-_reg("rms", "rms", ds.make_athena_loader(f"{_ATHENA}/athena-cti-rms.jsonl", "rms"), None, 512)
-_reg("taa", "taa", ds.make_athena_loader(f"{_ATHENA}/athena-cti-taa.jsonl", "taa"), None, 512)
-_reg("athena_ate", "ate", ds.make_athena_loader(f"{_ATHENA}/athena-cti-ate.jsonl", "ate"), None, 256)
-_reg("athena_rcm", "rcm", ds.make_athena_loader(f"{_ATHENA}/athena-cti-rcm.jsonl", "rcm"), None, 1024)
-_reg("athena_vsp", "vsp", ds.make_athena_loader(f"{_ATHENA}/athena-cti-vsp.jsonl", "vsp"), None, 1024)
+_reg(
+    "ckt",
+    "ckt",
+    ds.make_athena_loader(f"{_ATHENA}/athena-cti-ckt-3k.jsonl", "ckt"),
+    None,
+    1024,
+    _url_source(f"{_ATHENA}/athena-cti-ckt-3k.jsonl", "AthenaBench CKT"),
+)
+_reg(
+    "rms",
+    "rms",
+    ds.make_athena_loader(f"{_ATHENA}/athena-cti-rms.jsonl", "rms"),
+    None,
+    512,
+    _url_source(f"{_ATHENA}/athena-cti-rms.jsonl", "AthenaBench RMS"),
+)
+_reg(
+    "taa",
+    "taa",
+    ds.make_athena_loader(f"{_ATHENA}/athena-cti-taa.jsonl", "taa"),
+    None,
+    512,
+    _url_source(f"{_ATHENA}/athena-cti-taa.jsonl", "AthenaBench TAA"),
+)
+_reg(
+    "athena_ate",
+    "ate",
+    ds.make_athena_loader(f"{_ATHENA}/athena-cti-ate.jsonl", "ate"),
+    None,
+    256,
+    _url_source(f"{_ATHENA}/athena-cti-ate.jsonl", "AthenaBench ATE"),
+)
+_reg(
+    "athena_rcm",
+    "rcm",
+    ds.make_athena_loader(f"{_ATHENA}/athena-cti-rcm.jsonl", "rcm"),
+    None,
+    1024,
+    _url_source(f"{_ATHENA}/athena-cti-rcm.jsonl", "AthenaBench RCM"),
+)
+_reg(
+    "athena_vsp",
+    "vsp",
+    ds.make_athena_loader(f"{_ATHENA}/athena-cti-vsp.jsonl", "vsp"),
+    None,
+    1024,
+    _url_source(f"{_ATHENA}/athena-cti-vsp.jsonl", "AthenaBench VSP"),
+)
 
 # ── Other MCQ benchmarks ─────────────────────────────────────────────────────
-_reg("seceval", "seceval", ds.load_seceval, _SECEVAL, 256)
-_reg("cybermetric", "mcq", ds.load_cybermetric, _CYBERMETRIC, 256)
-_reg("mmlu-cs", "mcq", ds.load_mmlu_cs, None, 512)
-_reg("cissp", "mcq", ds.load_cissp, None, 1024)
+# SecEval ships a single questions.json at the HF repo root (no subset/split).
+_reg("seceval", "seceval", ds.load_seceval, _SECEVAL, 256, _hf_source(_SECEVAL_HF, None, "SecEval", split=None))
+_reg(
+    "cybermetric",
+    "mcq",
+    ds.load_cybermetric,
+    _CYBERMETRIC,
+    256,
+    _hf_source(_CYBERMETRIC_HF, "cyberMetric_500", "CyberMetric-500"),
+)
+_reg(
+    "mmlu-cs",
+    "mcq",
+    ds.load_mmlu_cs,
+    None,
+    512,
+    _hf_source(_MMLU_HF, "computer_security", "MMLU computer_security (5-shot)"),
+)
+# CISSP is not a public dataset; the path is supplied at runtime via env var.
+_reg("cissp", "mcq", ds.load_cissp, None, 1024, _other_source("CISSP (private; SAYF_EVAL_CISSP_PATH)"))
 
 # ── SEvenLLM (open-ended structured CTI extraction / analysis) ────────────────
 # Judged semantically; open-ended JSON/text outputs need a larger budget.
-_reg("sevenllm", "sevenllm", ds.load_sevenllm, None, 2000)
+# English subset of test.jsonl (non-Chinese rows kept by the loader).
+_reg("sevenllm", "sevenllm", ds.load_sevenllm, None, 2000, _hf_source(_SEVENLLM_HF, None, "SEvenLLM-Bench (English)"))

@@ -14,6 +14,24 @@ SUMMARY = {
     "vsp": {"accuracy": 0.0, "correct": 0, "total": 2, "skipped": 0, "mad": 1.2},
 }
 
+_HF = "RISys-Lab/Benchmarks_CyberSec_CTI-Bench"
+TASK_SOURCES = {
+    "mcq": {
+        "type": "hf_dataset",
+        "dataset_name": "CTI-Bench MCQ",
+        "hf_repo": _HF,
+        "subset": "cti-mcq",
+        "split": "test",
+    },
+    "vsp": {
+        "type": "hf_dataset",
+        "dataset_name": "CTI-Bench VSP (CVSS)",
+        "hf_repo": _HF,
+        "subset": "cti-vsp",
+        "split": "test",
+    },
+}
+
 
 def _record():
     return build_record(
@@ -24,6 +42,7 @@ def _record():
         model_base_url=None,
         max_tokens_override=4096,
         answer_stop=["\n"],
+        task_sources=TASK_SOURCES,
     )
 
 
@@ -39,6 +58,14 @@ def test_record_embeds_pipeline_config_and_scores():
     assert p["max_tokens_override"] == 4096 and p["answer_stop"] == ["\n"]
     assert "denominator" in p["denominator_policy"].lower()
     assert r["schema_version"] and r["sayf_eval_version"] and r["created_at"]
+
+
+def test_record_embeds_task_sources():
+    # The record is self-describing: each task carries its declared provenance.
+    r = _record().to_dict()
+    assert r["task_sources"]["mcq"]["type"] == "hf_dataset"
+    assert r["task_sources"]["mcq"]["hf_repo"].startswith("RISys-Lab/")
+    assert r["task_sources"]["vsp"]["subset"] == "cti-vsp"
 
 
 def test_scores_record_carries_no_item_text():
