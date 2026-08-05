@@ -1,11 +1,11 @@
-"""Command-line entrypoint: ``seceval {run-inference,run-judge,run}``.
+"""Command-line entrypoint: ``sayf-eval {run-inference,run-judge,run,benchmark-spec,eval-results}``.
 
-All three subcommands build the model-under-test and/or judge as the *same*
+The run subcommands build the model-under-test and/or judge as the *same*
 :class:`~sayf_eval.model.Model` type — local vLLM is reached by passing
 ``--model openai/<served-name> --base-url http://localhost:8000/v1``.
 
-Tasks must be registered (importing ``sayf_eval.tasks`` triggers registration once
-the MVP loaders land in Phase 2).
+Tasks are registered by importing ``sayf_eval.tasks`` (see :func:`_import_tasks`),
+which happens once at startup in :func:`main`.
 """
 
 from __future__ import annotations
@@ -25,7 +25,8 @@ def _import_tasks() -> None:
     try:
         import sayf_eval.tasks  # noqa: F401
     except ModuleNotFoundError:
-        # Tasks package not present yet (pre-Phase-2); registry stays empty.
+        # Defensive: if the tasks package can't be imported, the registry stays
+        # empty and task resolution raises a clear error downstream.
         pass
 
 
@@ -52,7 +53,7 @@ def _resolve_tasks(names: list[str]):
     from sayf_eval.registry import available_tasks, get_task
 
     if not available_tasks():
-        sys.exit("No tasks registered. (MVP task loaders arrive in Phase 2 — see PLAN.md.)")
+        sys.exit("No tasks registered — sayf_eval.tasks failed to import.")
     return [get_task(n) for n in names]
 
 

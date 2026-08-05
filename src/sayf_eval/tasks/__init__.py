@@ -1,8 +1,9 @@
 """Task registrations. Importing this package populates the registry.
 
-Covers the full ~24-task suite: CTI-Bench (HF + TSV), AthenaBench (JSONL),
-SECURE, SecEval, CyberMetric, SecBench, MMLU-CS, RedSage, CISSP. Per-task token
-budgets and system prompts follow the original pipeline's standardized config.
+Covers the full 25-task suite: CTI-Bench (HF + TSV), AthenaBench (JSONL),
+SECURE, SecEval, CyberMetric, SecBench, MMLU-CS, RedSage, CISSP, SEvenLLM.
+Per-task token budgets and system prompts follow the original pipeline's
+standardized config.
 """
 
 from __future__ import annotations
