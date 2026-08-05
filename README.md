@@ -31,6 +31,29 @@ separate:
 The **judge is not special** — it is another `Model`, so the model-under-test
 and the judge can each be any provider with no code change.
 
+## Why sayf-eval?
+
+General-purpose eval harnesses (lighteval, lm-eval-harness, HELM) are broad by
+design and touch cybersecurity only incidentally — usually a single subject such
+as MMLU's `computer_security` (which sayf-eval also includes, as `mmlu-cs`).
+sayf-eval is instead a **dedicated cybersecurity suite**: 25 sub-tasks across 9
+benchmark families spanning cyberthreat intelligence (CWE mapping, CVSS
+vulnerability scoring, MITRE ATT&CK technique extraction, threat-actor
+attribution), ICS/OT security, security-tooling proficiency, and open-ended CTI
+extraction — scored with domain-specific metrics those harnesses don't provide
+(CVSS mean-absolute-difference, ATT&CK parent-technique micro-F1, CWE-set
+equality, threat-actor alias resolution).
+
+Beyond coverage, it standardizes the *methodology*: fixed, documented decoding
+and scoring choices (temperature 0, fixed seed, per-task token budgets,
+`<think>` stripping, an explicit denominator policy), and every run writes a
+results record that embeds the full pipeline configuration next to the scores —
+so entries are comparable by construction, not bare numbers. Scoring is
+LLM-as-judge where the judge is just another `Model`, so model-under-test and
+judge can each be any provider (hosted API or local vLLM) with no code change.
+And as a security benchmark it carries a deliberate dual-use posture: aggregate
+scores are safe to publish, while per-sample item text stays private.
+
 ## Architecture
 
 ```
@@ -133,6 +156,54 @@ pipeline-dependent, the record embeds the **full pipeline configuration**
 (decoding params, token-budget policy, `<think>` handling, denominator policy,
 judge model) next to the per-task metrics — so entries are comparable by
 construction, not bare numbers.
+
+### The results record
+
+`results_<ts>.json` is a single JSON object (record schema `1.0`):
+
+```json
+{
+  "model": { "name": "openai/gpt-4o", "provider": "openai", "base_url": null },
+  "judge": { "name": "anthropic/claude-sonnet-4-20250514", "provider": "anthropic", "base_url": null },
+  "pipeline": {
+    "temperature": 0.0,
+    "top_p": 1.0,
+    "seed": 42,
+    "max_tokens": "per-task-calibrated",
+    "max_tokens_override": null,
+    "answer_stop": null,
+    "think_handling": "strip <think>...</think> before judging, then apply stop sequence to the answer only",
+    "scoring": "llm-as-judge: single call performs extraction + CORRECT/INCORRECT verdict",
+    "denominator_policy": "accuracy = correct / total over all attempted items; unparseable/empty answers count as incorrect; only judge-API failures are excluded (skipped) from both numerator and denominator"
+  },
+  "results": {
+    "mcq": { "accuracy": 0.667, "correct": 2, "total": 3, "skipped": 0 },
+    "vsp": { "accuracy": 0.5, "correct": 1, "total": 2, "skipped": 0, "mad": 1.3 }
+  },
+  "tasks": ["mcq", "vsp"],
+  "task_sources": {
+    "mcq": { "type": "hf_dataset", "dataset_name": "CTI-Bench MCQ", "hf_repo": "RISys-Lab/Benchmarks_CyberSec_CTI-Bench", "subset": "cti-mcq", "split": "test" }
+  },
+  "sayf_eval_version": "0.1.2",
+  "schema_version": "1.0",
+  "created_at": "2026-01-01T00:00:00+00:00"
+}
+```
+
+| Field | Meaning |
+|-------|---------|
+| `model` / `judge` | The model-under-test and the judge, each a `{name, provider, base_url}` triple. `name` is the LiteLLM model string; `provider` is its prefix; `base_url` is set for local / self-hosted endpoints. |
+| `pipeline` | The exact decoding + scoring configuration that produced the scores: `temperature` / `top_p` / `seed`; the `max_tokens` budget policy (`"per-task-calibrated"` or `"override"`, with the value in `max_tokens_override`); `answer_stop`; `think_handling`; `scoring`; and the `denominator_policy`. This is what makes records comparable by construction. |
+| `results` | Per-task metrics. Every task carries `accuracy` / `correct` / `total` / `skipped`; VSP tasks add `mad` (CVSS mean-absolute-difference), ATE tasks add `precision` / `recall` / `f1` (parent-technique micro-average). |
+| `tasks` | Sorted list of the task names present in `results`. |
+| `task_sources` | Per-task dataset provenance — `hf_dataset` (`hf_repo` + `subset` + `split`), `url`, or `other` — so the record is self-describing. |
+| `sayf_eval_version` | The sayf-eval version that produced the record. |
+| `schema_version` | Version of the record schema itself (currently `1.0`). |
+| `created_at` | UTC timestamp (ISO-8601) of when the record was written. |
+
+The record carries metrics and configuration only — never prompt, gold-answer,
+or model-response text — so the scores artifact is safe to publish while
+per-sample details stay private.
 
 Optionally push to a HuggingFace dataset (`pip install 'sayf-eval[hub]'`):
 
