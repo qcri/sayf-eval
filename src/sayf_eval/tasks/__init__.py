@@ -28,7 +28,7 @@ _REDSAGE = "RISys-Lab/Benchmarks_CyberSec_RedSageMCQ"
 _ATHENA = "https://github.com/Athena-Software-Group/athenabench/raw/main/benchmark"
 
 
-def _reg(name, task_type, loader, system_prompt=None, max_tokens=1024):
+def _reg(name, task_type, loader, system_prompt=None, max_tokens=1024, scorer_kind=""):
     register(
         Task(
             name=name,
@@ -36,6 +36,7 @@ def _reg(name, task_type, loader, system_prompt=None, max_tokens=1024):
             loader=loader,
             system_prompt=system_prompt,
             max_tokens=max_tokens,
+            scorer_kind=scorer_kind,
         )
     )
 
@@ -82,3 +83,29 @@ _reg("cissp", "mcq", ds.load_cissp, None, 1024)
 # ── SEvenLLM (open-ended structured CTI extraction / analysis) ────────────────
 # Judged semantically; open-ended JSON/text outputs need a larger budget.
 _reg("sevenllm", "sevenllm", ds.load_sevenllm, None, 2000)
+
+# ── CyberSecEval (Meta PurpleLlama) — LLM-judge safety subsets ───────────────
+# Prompts pulled from PurpleLlama's public datasets (or a local copy via
+# SAYF_EVAL_CSE_*_PATH). No gold answer — the judge makes a safety call and the
+# reported ``accuracy`` is the safe-response rate (higher = safer). These run
+# through the translation layer like every other task. (The insecure-code-gen
+# subsets, which need a static analyzer, are intentionally out of scope here.)
+_reg("cse_prompt_injection", "cse_prompt_injection", ds.load_cyberseceval_prompt_injection, None, 512)
+_reg("cse_mitre", "cse_mitre", ds.load_cyberseceval_mitre, None, 1024)
+_reg("cse_interpreter", "cse_interpreter", ds.load_cyberseceval_interpreter, None, 1024)
+
+# ── Code-generation (static-analysis scored, scorer_kind="code") ─────────────
+# CyberSecEval insecure-code-gen + SecurityEval. The model writes code; a static
+# analyzer (Bandit / CodeShield) checks it for known weaknesses — no LLM judge.
+# Reported ``accuracy`` is the secure-code rate (higher = safer); ``insecure`` =
+# total - correct. These need --code-analyzer; SecurityEval is Python (Bandit ok),
+# CyberSecEval is multi-language (CodeShield for full coverage).
+_reg("cse_instruct", "cse_instruct", ds.load_cyberseceval_instruct, None, 1024, scorer_kind="code")
+_reg("cse_autocomplete", "cse_autocomplete", ds.load_cyberseceval_autocomplete, None, 1024, scorer_kind="code")
+_reg("securityeval", "securityeval", ds.load_securityeval, None, 1024, scorer_kind="code")
+
+# ── Native-Arabic MCQ (local JSONL; Arabic system prompt) ────────────────────
+# Path via env var. Run as-is for native Arabic, or with --translator
+# --translator-lang en for the translate-test baseline.
+_reg("ar_native_mcq", "mcq", ds.make_local_mcq_loader("SAYF_EVAL_AR_NATIVE_PATH"), ds.SYS_AR, 256)
+_reg("cissp_ar", "mcq", ds.make_local_mcq_loader("SAYF_EVAL_CISSP_AR_PATH"), ds.SYS_AR, 1024)

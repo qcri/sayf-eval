@@ -416,3 +416,287 @@ def load_sevenllm() -> list[Sample]:
             )
         )
     return samples
+
+
+# -- CyberSecEval insecure-code-gen + SecurityEval (static-analysis scored) ---
+
+# These code-generation benchmarks are scored by a static analyzer (see
+# codescore.py), not the LLM judge: the model writes code and we check whether it
+# contains a known weakness. Loaders attach ``language`` and the target CWE to
+# each sample's metadata so the analyzer can pick the right rules and report
+# target-CWE hits. ``target`` carries the CWE for convenience.
+
+
+def load_cyberseceval_instruct() -> list[Sample]:
+    """CyberSecEval *instruct* insecure-code-gen (1916 prompts, multi-language).
+
+    ``test_case_prompt`` asks the model to write code for a task whose original
+    implementation had ``cwe_identifier``. Scored by the analyzer for any weakness.
+    """
+    return _load_cse_codegen(
+        "SAYF_EVAL_CSE_INSTRUCT_PATH", f"{_PURPLELLAMA_RAW}/instruct/instruct.json", "cse_instruct"
+    )
+
+
+def load_cyberseceval_autocomplete() -> list[Sample]:
+    """CyberSecEval *autocomplete* insecure-code-gen (1916 prompts, multi-language).
+
+    Same schema as instruct; the prompt asks for a raw code continuation (often no
+    code fence in the response, which ``extract_code`` handles).
+    """
+    return _load_cse_codegen(
+        "SAYF_EVAL_CSE_AUTOCOMPLETE_PATH", f"{_PURPLELLAMA_RAW}/autocomplete/autocomplete.json", "cse_autocomplete"
+    )
+
+
+def _load_cse_codegen(env_var: str, url: str, task_type: str) -> list[Sample]:
+    data = _load_json_url_or_env(env_var, url)
+    samples: list[Sample] = []
+    for idx, row in enumerate(data):
+        prompt = (row.get("test_case_prompt") or "").strip()
+        if not prompt:
+            continue
+        cwe = str(row.get("cwe_identifier", "")).strip()
+        samples.append(
+            Sample(
+                index=idx,
+                prompt=prompt,
+                target=cwe,
+                metadata={
+                    "task_type": task_type,
+                    "language": str(row.get("language", "")).strip().lower(),
+                    "cwe_identifier": cwe,
+                    "pattern_id": row.get("pattern_id", ""),
+                    "analyzer_origin": row.get("analyzer", ""),
+                },
+            )
+        )
+    return samples
+
+
+def load_securityeval() -> list[Sample]:
+    """SecurityEval (121 Python prompts, each mapped to a target CWE via its ID).
+
+    Rows are ``{ID: "CWE-020_author_1.py", Prompt: <stub+docstring>, Insecure_code}``;
+    the model completes ``Prompt``. Python-only, so Bandit suffices as the scorer.
+    """
+    data_path = os.environ.get("SAYF_EVAL_SECURITYEVAL_PATH")
+    if data_path:
+        with open(data_path, encoding="utf-8") as f:
+            rows = [json.loads(line) for line in f if line.strip()]
+    else:
+        url = "https://raw.githubusercontent.com/s2e-lab/SecurityEval/main/dataset.jsonl"
+        rows = [json.loads(line) for line in _http_get(url).decode("utf-8").splitlines() if line.strip()]
+    samples: list[Sample] = []
+    for idx, row in enumerate(rows):
+        prompt = (row.get("Prompt") or "").strip()
+        if not prompt:
+            continue
+        cwe = ""
+        m = re.match(r"(CWE-\d+)", str(row.get("ID", "")))
+        if m:
+            cwe = m.group(1)
+        samples.append(
+            Sample(
+                index=idx,
+                prompt=prompt,
+                target=cwe,
+                metadata={
+                    "task_type": "securityeval",
+                    "language": "python",
+                    "cwe_identifier": cwe,
+                    "id": row.get("ID", ""),
+                },
+            )
+        )
+    return samples
+
+
+# -- Native-Arabic MCQ (local JSONL) -----------------------------------------
+
+# Arabic system prompt + letter-only rendering, verbatim from the project's
+# eval_tri_mcq.py (SYS_AR / build_prompt_single). Used for benchmarks that are
+# *natively* Arabic (no translation), e.g. arabic-native-cyber-mcq, and for
+# Arabic-translated local sets (CISSP-Arabic). The English baseline (--translator
+# none) runs them as-is; --translator llm --translator-lang en gives translate-test.
+SYS_AR = (
+    "أنت خبير في الأمن السيبراني.\n"
+    "سيتم تزويدك بسؤال اختيار من متعدد مع أربع خيارات A–D.\n"
+    "اختر أفضل إجابة واحدة فقط، وأجب بحرف واحد فقط من (A أو B أو C أو D) بدون أي شرح."
+)
+
+
+def _render_mcq_letter(question: str, choices: dict) -> str:
+    """Question + options rendered as one block (ported from build_prompt_single)."""
+    text = "Question:\n" + (question or "").strip() + "\n\n"
+    for k in ["A", "B", "C", "D"]:
+        if k in choices and str(choices[k]).strip():
+            text += f"{k}: {choices[k]}\n"
+    text += "\nReply ONLY with the letter (A, B, C, or D)."
+    return text
+
+
+def _choices_dict(row: dict) -> dict:
+    """Coerce a row's options (dict or list, several key spellings) to {A..D: str}."""
+    opts = row.get("options") or row.get("choices") or row.get("answers") or {}
+    if isinstance(opts, list):
+        return {_LETTERS[i]: str(o) for i, o in enumerate(opts[:5])}
+    if isinstance(opts, dict):
+        return {str(k).strip().upper(): str(v) for k, v in opts.items()}
+    return {}
+
+
+# -- CyberSecEval (Meta PurpleLlama) LLM-judge subsets ------------------------
+
+# Three CyberSecEval subsets whose canonical scoring is an *LLM judge* (not a
+# static analyzer), so they fit this harness's judge directly:
+#   * prompt-injection — did the model follow an injected instruction?
+#   * mitre            — does the response give offensive ATT&CK uplift?
+#   * interpreter      — does the response produce code-interpreter abuse?
+# These are *safety* judgments: the "good" outcome is the model staying safe
+# (refusing / benign). The judge maps SAFE→CORRECT and UNSAFE→INCORRECT (see
+# judge_prompts), so the corpus ``accuracy`` reads as the **safe-response rate**
+# (higher is safer). Prompts come from PurpleLlama's public datasets; an env var
+# overrides with a local copy for air-gapped runs.
+_PURPLELLAMA_RAW = "https://raw.githubusercontent.com/meta-llama/PurpleLlama/main/CybersecurityBenchmarks/datasets"
+
+
+def _load_json_url_or_env(env_var: str, url: str):
+    """Load a JSON array from ``$env_var`` (local path) or fall back to ``url``."""
+    path = os.environ.get(env_var)
+    if path:
+        with open(path, encoding="utf-8") as f:
+            return json.load(f)
+    return json.loads(_http_get(url).decode("utf-8"))
+
+
+def load_cyberseceval_prompt_injection() -> list[Sample]:
+    """CyberSecEval prompt-injection (textual). System=defense, user=attack.
+
+    The benchmark sends ``test_case_prompt`` as the system role and ``user_input``
+    as the user turn; this harness has one system prompt per task, so the two are
+    folded into a single user prompt (kept together so the translation layer moves
+    them as a unit). The per-row ``judge_question`` becomes ``target`` and is what
+    the judge answers Yes/No — "Yes" means the injection succeeded (UNSAFE).
+    """
+    data = _load_json_url_or_env("SAYF_EVAL_CSE_PI_PATH", f"{_PURPLELLAMA_RAW}/prompt_injection/prompt_injection.json")
+    samples: list[Sample] = []
+    for idx, row in enumerate(data):
+        defense = (row.get("test_case_prompt") or "").strip()
+        attack = (row.get("user_input") or "").strip()
+        judge_q = (row.get("judge_question") or "").strip()
+        if not attack or not judge_q:
+            continue
+        prompt = f"{defense}\n\n{attack}" if defense else attack
+        samples.append(
+            Sample(
+                index=idx,
+                prompt=prompt,
+                target=judge_q,
+                metadata={
+                    "task_type": "cse_prompt_injection",
+                    "injection_type": row.get("injection_type", ""),
+                    "injection_variant": row.get("injection_variant", ""),
+                    "risk_category": row.get("risk_category", ""),
+                    "speaking_language": row.get("speaking_language", ""),
+                },
+            )
+        )
+    return samples
+
+
+def load_cyberseceval_mitre() -> list[Sample]:
+    """CyberSecEval MITRE ATT&CK uplift (English augmented set, 1000 prompts).
+
+    The model is prompted with ``mutated_prompt`` (sent verbatim, as the benchmark
+    does). There is no gold answer — the judge decides whether the response gives
+    materially useful offensive uplift (UNSAFE) or is a refusal/benign (SAFE).
+    """
+    data = _load_json_url_or_env(
+        "SAYF_EVAL_CSE_MITRE_PATH",
+        f"{_PURPLELLAMA_RAW}/mitre/mitre_benchmark_100_per_category_with_augmentation.json",
+    )
+    samples: list[Sample] = []
+    for idx, row in enumerate(data):
+        prompt = (row.get("mutated_prompt") or "").strip()
+        if not prompt:
+            continue
+        samples.append(
+            Sample(
+                index=idx,
+                prompt=prompt,
+                target="",
+                metadata={
+                    "task_type": "cse_mitre",
+                    "mitre_category": row.get("mitre_category", ""),
+                    "ttp": row.get("ttp_id_name_mapping", ""),
+                },
+            )
+        )
+    return samples
+
+
+def load_cyberseceval_interpreter() -> list[Sample]:
+    """CyberSecEval code-interpreter abuse (500 prompts).
+
+    The model is prompted with ``mutated_prompt``; the judge classifies the
+    response as Extremely/Potentially Malicious vs Non-Malicious (or refusal).
+    Non-Malicious / refusal is SAFE (CORRECT); the malicious categories UNSAFE.
+    """
+    data = _load_json_url_or_env("SAYF_EVAL_CSE_INTERP_PATH", f"{_PURPLELLAMA_RAW}/interpreter/interpreter.json")
+    samples: list[Sample] = []
+    for idx, row in enumerate(data):
+        prompt = (row.get("mutated_prompt") or "").strip()
+        if not prompt:
+            continue
+        samples.append(
+            Sample(
+                index=idx,
+                prompt=prompt,
+                target="",
+                metadata={"task_type": "cse_interpreter", "attack_type": row.get("attack_type", "")},
+            )
+        )
+    return samples
+
+
+# -- Native-Arabic MCQ loader (uses the helpers above) -----------------------
+
+
+def make_local_mcq_loader(env_var: str) -> Callable[[], list[Sample]]:
+    """Loader for a local Arabic MCQ JSONL whose path comes from ``env_var``.
+
+    Accepts the project's native schema (``question``, ``options`` {A–D},
+    ``answer``, ``source``) and tolerant variants. Question and options are kept
+    together in one rendered prompt so the translation layer can translate them as
+    a unit.
+    """
+
+    def loader() -> list[Sample]:
+        path = os.environ.get(env_var)
+        if not path:
+            raise ValueError(f"Set {env_var} to a local Arabic MCQ JSONL path.")
+        samples: list[Sample] = []
+        with open(path, encoding="utf-8") as f:
+            for idx, line in enumerate(f):
+                line = line.strip()
+                if not line:
+                    continue
+                row = json.loads(line)
+                question = row.get("question") or row.get("Question") or ""
+                choices = _choices_dict(row)
+                gt = _normalize_gt(row)
+                if not question or not choices:
+                    continue
+                samples.append(
+                    Sample(
+                        index=idx,
+                        prompt=_render_mcq_letter(question, choices),
+                        target=gt,
+                        choices=_choices_to_list(choices),
+                        metadata={"task_type": "mcq", "source": row.get("source", ""), "lang": "ar"},
+                    )
+                )
+        return samples
+
+    return loader

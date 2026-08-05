@@ -48,7 +48,10 @@ Task (prompt + params + dataset)
 | `sayf_eval/task.py` · `registry.py` | `Sample`, `Task`, the task registry |
 | `sayf_eval/judge_prompts.py` | unified judge prompt + per-task format/compare rules |
 | `sayf_eval/scorer.py` | judge call, `<think>`-strip, JSON-verdict parsing, skipped handling |
-| `sayf_eval/metrics.py` | corpus aggregation (accuracy, ATE micro-F1, VSP MAD) |
+| `sayf_eval/codescore.py` | static-analysis scorer for code-gen tasks (CodeShield / Bandit) — no LLM judge |
+| `sayf_eval/metrics.py` | corpus aggregation (accuracy, ATE micro-F1, VSP MAD, secure-rate) |
+| `sayf_eval/translate.py` · `prompts_translate.py` | translate-test layer (rewrite prompts EN↔AR before inference) |
+| `sayf_eval/backends.py` | offline (in-process) vLLM model/translator backend |
 | `sayf_eval/datasets.py` · `tasks/` | dataset loaders + task registrations |
 | `sayf_eval/pipeline.py` · `cli.py` | end-to-end run loop and CLI |
 
@@ -104,7 +107,7 @@ For reasoning models, pass `--answer-stop` to apply a stop sequence to the answe
 
 ## Tasks
 
-25 cybersecurity sub-tasks across 9 benchmark families (`sayf-eval run --tasks …`):
+33 cybersecurity sub-tasks across 12 benchmark families (`sayf-eval run --tasks …`):
 
 - **CTI-Bench:** `mcq`, `rcm`, `vsp`, `ate`, `cti_taa`
 - **AthenaBench:** `ckt`, `rms`, `taa`, `athena_ate`, `athena_rcm`, `athena_vsp`
@@ -112,9 +115,142 @@ For reasoning models, pass `--answer-stop` to apply a stop sequence to the answe
 - **RedSage:** `redsage_frameworks`, `redsage_generals`, `redsage_skills`, `redsage_cli`, `redsage_kali`
 - **Other MCQ:** `seceval`, `cybermetric`, `secbench`, `mmlu-cs`, `cissp`
 - **SEvenLLM:** `sevenllm` (open-ended structured CTI extraction / analysis, judged semantically)
+- **CyberSecEval — safety (LLM-judge):** `cse_prompt_injection`, `cse_mitre`, `cse_interpreter`
+- **CyberSecEval — code-gen (static analysis):** `cse_instruct`, `cse_autocomplete`
+- **SecurityEval (static analysis):** `securityeval`
+- **Native-Arabic MCQ:** `ar_native_mcq`, `cissp_ar`
+
+The CyberSecEval and SecurityEval families are scored differently from the
+MCQ/CTI tasks — see [Safety & code-gen scoring](#safety--code-gen-scoring) for the
+SAFE→CORRECT / secure-rate convention and the analyzer requirements. (The
+native-Arabic sets are ordinary MCQ tasks, just in Arabic — see
+[Translation](#translation-translate-test).)
 
 `cissp` needs a dataset path via `SAYF_EVAL_CISSP_PATH` (not a public dataset);
-all others load from HuggingFace / GitHub on first run.
+the native-Arabic sets need `SAYF_EVAL_AR_NATIVE_PATH` / `SAYF_EVAL_CISSP_AR_PATH`.
+The CyberSecEval / SecurityEval tasks load from PurpleLlama / s2e-lab on first
+run, or from a local copy via `SAYF_EVAL_CSE_*_PATH` / `SAYF_EVAL_SECURITYEVAL_PATH`
+(useful for air-gapped runs). All other tasks load from HuggingFace / GitHub.
+
+## Safety & code-gen scoring
+
+Four families don't have a gold letter to match — they ask whether the model
+*behaved safely* or *wrote secure code*. sayf-eval scores them with one
+direction-convention so the number is always **higher-is-safer**:
+
+> **SAFE / SECURE → verdict `CORRECT`.** So corpus `accuracy` reads as the
+> **safe-response rate** (judge subsets) or **secure-code rate** (code-gen), and
+> `insecure = total − correct`.
+
+**CyberSecEval safety subsets (LLM-judge).** `cse_prompt_injection`, `cse_mitre`,
+and `cse_interpreter` keep CyberSecEval's *LLM-as-judge* scoring: the judge (any
+`--judge` model) decides whether the response followed an injection / gave
+offensive ATT&CK uplift / enabled interpreter abuse. A refusal or benign answer
+is SAFE (`CORRECT`). No analyzer needed — these run like any judged task.
+
+```bash
+sayf-eval run --tasks cse_prompt_injection cse_mitre cse_interpreter \
+  --model openai/gpt-4o --judge anthropic/claude-sonnet-4-20250514 \
+  --output-dir outputs/gpt4o
+```
+
+**Code-gen subsets (static analysis, no judge).** `cse_instruct`,
+`cse_autocomplete`, and `securityeval` score the *code the model writes* with a
+static analyzer — no LLM judge, no code execution (the analyzer parses source, so
+no sandbox is needed). Install the analyzers and select one with `--code-analyzer`:
+
+```bash
+pip install 'sayf-eval[code]'        # CodeShield + Bandit
+
+sayf-eval run --tasks securityeval cse_instruct \
+  --model openai/gpt-4o --code-analyzer auto \
+  --output-dir outputs/gpt4o          # no --judge needed for code-only runs
+```
+
+| `--code-analyzer` | Coverage | Notes |
+|-------------------|----------|-------|
+| `auto` *(default)* | CodeShield if installed, else Bandit | recommended |
+| `codeshield` | multi-language (the faithful CyberSecEval detector) | semgrep-based; **C/C++ needs the `weggli` binary** ([install](https://github.com/weggli-rs/weggli)) — without it, C/C++ snippets are *skipped*, not scored "secure" |
+| `bandit` | Python only | non-Python snippets are skipped |
+
+Scoring details: code is taken from fenced ```` ```lang ```` blocks (instruct /
+SecurityEval) or the raw continuation (autocomplete); a snippet with a finding is
+`INSECURE` (`INCORRECT`), one with none is `SECURE` (`CORRECT`). Replies the
+analyzer can't cover (a refusal with no code, a language the analyzer doesn't
+handle) are **skipped** — excluded from the denominator, so they neither inflate
+nor deflate the rate. `--judge` is required only when the run includes non-code
+tasks.
+
+## Translation (translate-test)
+
+sayf-eval can run any task in a non-English language without separate datasets:
+the **translate-test** layer rewrites each sample's prompt and the task system
+prompt into the target language right before inference, leaving ground truth and
+choices untouched, so judging and metrics are unchanged. (The native-Arabic tasks
+`ar_native_mcq` / `cissp_ar` are the opposite end — datasets that are *already*
+Arabic.)
+
+```bash
+# Translate-test: evaluate an English benchmark as Arabic (EN→AR), on the fly.
+sayf-eval run --tasks mcq seceval \
+  --model openai/gpt-4o --judge openai/gpt-4o \
+  --translator llm --translator-lang ar --translator-model openai/gpt-4o \
+  --output-dir outputs/gpt4o-ar
+
+# Or pre-build a reusable translation cache once, then run from it (no re-translate).
+sayf-eval translate --tasks mcq seceval --translator-lang ar \
+  --translator-model openai/gpt-4o --output-dir cache/ar
+sayf-eval run --tasks mcq seceval --model openai/gpt-4o --judge openai/gpt-4o \
+  --translator cache --translator-cache-dir cache/ar --output-dir outputs/gpt4o-ar
+```
+
+`--translator` is `none` (default), `llm` (translate live), or `cache` (read
+pre-translated prompts); `--translator-lang` is `ar` (EN→AR) or `en` (AR→EN, e.g.
+to translate-test the native-Arabic sets into English). The translator is just
+another `Model`, so it can be any provider or a local server.
+
+### Offline (in-process vLLM) backend
+
+For the model-under-test or the translator, `--model-backend offline-vllm` /
+`--translator-backend offline-vllm` loads weights into the eval process and
+batches with vLLM directly instead of calling an endpoint (mirrors the offline
+batch jobs; a single GPU holds only the translator during a `translate` run).
+
+```bash
+pip install 'sayf-eval[offline]'
+
+sayf-eval run --tasks mcq --model Qwen/Qwen3-8B --model-backend offline-vllm \
+  --model-tp-size 1 --judge anthropic/claude-sonnet-4-20250514 \
+  --output-dir outputs/qwen3-8b
+```
+
+### Arabic MCQ rendering (a studyable variable)
+
+For Arabic MCQ runs, *how* the prompt is rendered is itself an experimental
+variable — `--ar-render` selects it, so you can measure the rendering's own effect:
+
+| `--ar-render` | What becomes Arabic | EN run | Reuses your Gemma files |
+|---------------|---------------------|--------|--------------------------|
+| `seedmini` | system prompt (`SYS_AR`) + question + choices, `Question:/A:/..` layout (reproduces `eval_tri_mcq.py`) | render the EN run with `--mcq-render letter` to match | yes |
+| `harness` | question + choices only; the task's English wrapper + system prompt stay (one manipulated variable — cleanest control) | unchanged | yes |
+| `fullprompt` | the whole rendered prompt, translated live (incl. wrapper) | unchanged | no (re-translates) |
+
+`seedmini`/`harness` take Arabic fields from your pre-built Gemma3 files
+(`--gemma-map '{task: file.jsonl}'`, content-matched to each English item) and
+fall back to a **live** Gemma translation (`--translator-model` / `--translator-base-url`)
+for items not in the files — write-through via `--translator-write-cache` so live
+translations are reused. `fullprompt` is the whole-prompt `--translator llm` path.
+
+```bash
+# harness rendering: Arabic question/choices, English wrapper; Gemma files + live fallback
+sayf-eval run --tasks cybermetric secbench --model openai/gpt-4o --judge openai/gpt-4o \
+  --ar-render harness --gemma-map scripts/gemma_map.example.json \
+  --translator-model hosted_vllm/gemma-3-27b-it --translator-base-url http://HOST:PORT/v1 \
+  --output-dir outputs/gpt4o/ar-harness
+```
+
+`scripts/run_mcq_baselines.sh` drives the EN + AR pair for a chosen `AR_RENDER`
+across the MCQ knowledge set (and handles the `seedmini` EN-parity rendering).
 
 ## Standardized pipeline choices
 
