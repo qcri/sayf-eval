@@ -110,7 +110,7 @@ def _add_push_args(p: argparse.ArgumentParser) -> None:
     p.add_argument("--hf-token", default=None, help="HF token (else uses $HF_TOKEN).")
 
 
-def _export_results(args, summary: dict) -> None:
+def _export_results(args, summary: dict, tasks) -> None:
     """Build + save the canonical scores record, then push if requested."""
     from sayf_eval.results import build_record, push_details, push_scores, save_record
 
@@ -123,6 +123,7 @@ def _export_results(args, summary: dict) -> None:
         judge_base_url=args.judge_base_url or args.base_url,
         max_tokens_override=args.max_tokens,
         answer_stop=args.answer_stop,
+        task_sources={t.name: (t.source or {}) for t in tasks},
     )
     path = save_record(record, args.output_dir)
     print(f"results record → {path}")
@@ -268,7 +269,7 @@ def main(argv: list[str] | None = None) -> int:
         scorer = _build_scorer(args)
         summary = run_tasks(tasks, model, scorer, args.output_dir, cfg)
         print(json.dumps(summary, indent=2))
-        _export_results(args, summary)
+        _export_results(args, summary, tasks)
         return 0
 
     return 1

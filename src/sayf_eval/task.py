@@ -47,6 +47,12 @@ class Task:
             lazy so importing the registry does not trigger dataset downloads.
         scorer_kind: Usually equal to ``task_type``; kept separate so several
             tasks can share one scoring family.
+        source: Declared dataset provenance for this task, as a neutral dict that
+            downstream exporters map onto their own schema (e.g. the Every Eval
+            Ever ``source_data`` variants). One of three shapes — HuggingFace
+            ``{"type": "hf_dataset", "dataset_name", "hf_repo", "subset"?, "split"?}``,
+            URL ``{"type": "url", "dataset_name", "url": [...]}``, or private
+            ``{"type": "other", "dataset_name"}``. ``None`` when undeclared.
     """
 
     name: str
@@ -55,6 +61,7 @@ class Task:
     system_prompt: str | None = None
     max_tokens: int = 1024
     scorer_kind: str = ""
+    source: dict | None = None
 
     def __post_init__(self) -> None:
         if not self.scorer_kind:
