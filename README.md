@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/sayf-eval.png" alt="sayf-eval" width="520">
+  <img src="https://raw.githubusercontent.com/qcri/sayf-eval/main/assets/sayf-eval.png" alt="sayf-eval" width="520">
 </p>
 
 <h1 align="center">sayf-eval</h1>
@@ -10,7 +10,7 @@
 
 <p align="center">
   <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.10+-blue.svg" alt="Python 3.10+"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License: MIT"></a>
+  <a href="https://github.com/qcri/sayf-eval/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License: MIT"></a>
   <a href="https://pypi.org/project/sayf-eval/"><img src="https://img.shields.io/pypi/v/sayf-eval.svg" alt="PyPI"></a>
   <img src="https://img.shields.io/badge/code%20style-ruff-000000.svg" alt="Ruff">
 </p>
