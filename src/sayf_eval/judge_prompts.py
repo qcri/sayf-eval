@@ -1,8 +1,7 @@
 """Unified LLM-as-judge prompt: extract + verdict in one call.
 
-Ported verbatim from the original harness
-(``unified-benchmark-pipeline/run_evaluate_llm_judge.py::create_judge_prompt``,
-lines 86-254). The judge does extraction AND verdict; comparison rules are
+Ported from the original evaluation harness. The judge does extraction AND
+verdict; comparison rules are
 described in natural language per task. No regex/Python post-processing of the
 model answer — the judge returns the canonical form.
 

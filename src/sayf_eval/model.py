@@ -4,9 +4,8 @@ One adapter, not a provider matrix. Any provider (OpenAI, Anthropic, Azure) and
 any local OpenAI-compatible server (vLLM via ``base_url``) is reached through the
 same :class:`Model`. The judge is not special — it is another :class:`Model`.
 
-Mirrors the structure of lighteval's ``LiteLLMClient``
-(``_refs/lighteval/.../models/endpoints/litellm_model.py``): build a kwargs dict
-for ``litellm.completion(**kwargs)``, run a batch through a ``ThreadPoolExecutor``,
+Mirrors the structure of lighteval's ``LiteLLMClient``: build a kwargs dict for
+``litellm.completion(**kwargs)``, run a batch through a ``ThreadPoolExecutor``,
 retry with exponential backoff, and turn a content-filter / exhausted-retry into
 an explicit not-ok response rather than a crash.
 """

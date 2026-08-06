@@ -45,6 +45,7 @@ hub = [
 ]
 dev = [
     "pytest>=7.0",
+    "pytest-cov>=4.0",
     "ruff>=0.6",
     "build>=1.0",
     "twine>=5.0",
@@ -81,3 +82,7 @@ indent-style = "space"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.coverage.run]
+source = ["sayf_eval"]
+branch = true
