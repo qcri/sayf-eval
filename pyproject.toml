@@ -17,7 +17,7 @@ readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
 authors = [{ name = "QCRI", email = "aberriche@hbku.edu.qa" }]
-maintainers = [{ name = "QCRI", email = "aberriche@hbku.edu.qa" }]
+maintainers = [{ name = "Cybersecurity Team, QCRI", email = "aberriche@hbku.edu.qa" }]
 keywords = ["evaluation", "llm", "cybersecurity", "benchmark", "litellm", "security"]
 classifiers = [
     "Development Status :: 4 - Beta",
