@@ -12,6 +12,7 @@
   <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/badge/python-3.10+-blue.svg" alt="Python 3.10+"></a>
   <a href="https://github.com/qcri/sayf-eval/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-MIT-green.svg" alt="License: MIT"></a>
   <a href="https://pypi.org/project/sayf-eval/"><img src="https://img.shields.io/pypi/v/sayf-eval.svg" alt="PyPI"></a>
+  <a href="https://codecov.io/gh/qcri/sayf-eval"><img src="https://codecov.io/gh/qcri/sayf-eval/branch/main/graph/badge.svg" alt="Coverage"></a>
   <img src="https://img.shields.io/badge/code%20style-ruff-000000.svg" alt="Ruff">
 </p>
 

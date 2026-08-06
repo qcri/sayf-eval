@@ -1,6 +1,6 @@
-"""seceval — lightweight, model-agnostic cybersecurity LLM benchmark framework.
+"""sayf-eval — lightweight, model-agnostic cybersecurity LLM benchmark framework.
 
-Two layers, kept separate (see PROPOSAL.md):
+Two layers, kept separate:
   - Transport: LiteLLM. One ``Model`` adapter for every provider; local models
     are just a ``base_url``. The judge is another ``Model``.
   - Structure: lighteval-shaped. A ``Task``/``Scorer`` boundary with a two-level
