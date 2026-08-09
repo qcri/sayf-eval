@@ -26,15 +26,9 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/qcri/sayf-eval/actions/workflows/release.yaml">
-    <img src="https://github.com/qcri/sayf-eval/actions/workflows/release.yaml/badge.svg" alt="Release">
-  </a>
-  <a href="https://github.com/qcri/sayf-eval/actions/workflows/quality.yaml">
-    <img src="https://github.com/qcri/sayf-eval/actions/workflows/quality.yaml/badge.svg" alt="Quality">
-  </a>
-  <a href="https://github.com/qcri/sayf-eval/actions/workflows/tests.yaml">
-    <img src="https://github.com/qcri/sayf-eval/actions/workflows/tests.yaml/badge.svg" alt="Tests">
-  </a>
+  <a href="https://github.com/qcri/sayf-eval/actions/workflows/release.yaml"><img src="https://github.com/qcri/sayf-eval/actions/workflows/release.yaml/badge.svg" alt="Release"></a>
+  <a href="https://github.com/qcri/sayf-eval/actions/workflows/quality.yaml"><img src="https://github.com/qcri/sayf-eval/actions/workflows/quality.yaml/badge.svg" alt="Quality"></a>
+  <a href="https://github.com/qcri/sayf-eval/actions/workflows/tests.yaml"><img src="https://github.com/qcri/sayf-eval/actions/workflows/tests.yaml/badge.svg" alt="Tests"></a>
 </p>
 
 ---
