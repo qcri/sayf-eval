@@ -5,7 +5,7 @@
 <h1 align="center">sayf-eval</h1>
 
 <p align="center">
-  <em>A lightweight, model-agnostic framework for evaluating LLMs on cybersecurity benchmarks.</em>
+  <em>A lightweight, model-agnostic framework for evaluating LLMs on cybersecurity knowledge benchmarks.</em>
 </p>
 
 <p align="center">
