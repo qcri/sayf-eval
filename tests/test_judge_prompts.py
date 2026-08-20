@@ -19,8 +19,8 @@ def test_secure_kcv_prompt_uses_tfx_hint_not_mcq():
         "The claim is false.",
         "F",
     )
-    assert _TFX_HINT in p          # uses the True/False/X extraction hint
-    assert _MCQ_HINT not in p      # and does NOT fall back to the A–E MCQ hint
+    assert _TFX_HINT in p  # uses the True/False/X extraction hint
+    assert _MCQ_HINT not in p  # and does NOT fall back to the A–E MCQ hint
 
 
 def test_secure_mcq_path_still_uses_ae_hint():
