@@ -66,10 +66,11 @@ We ran 8 cybersecurity benchmarks on 10 models. Some of what we found:
 - Two benchmarks score the same CVSS task in **opposite directions** (lower is
   better vs higher is better), so they disagree about which model is best.
 - Scoring by log-probability instead of the generated answer moved one model
-  from **46% to 87%**.
+  from **45.7% to 86.6%**.
 
 None of this measures security knowledge — it measures the harness. In total,
-**9 of 10 models moved at least 3 leaderboard ranks** once these were fixed.
+**9 of 10 models moved at least 3 ranks _on at least one benchmark_** once
+these were fixed.
 
 A general harness will not fix this for you, because the broken choices live
 inside each benchmark's own scripts and are mostly undocumented. sayf-eval makes
@@ -80,9 +81,9 @@ inside each benchmark's own scripts and are mostly undocumented. sayf-eval makes
 
 | | [lm-evaluation-harness](https://github.com/EleutherAI/lm-evaluation-harness) | [lighteval](https://github.com/huggingface/lighteval) | **sayf-eval** |
 |---|---|---|---|
-| **Scope** | general (60+ benchmarks) | general (1000+ tasks) | cybersecurity only (25 sub-tasks, 9 families) |
+| **Scope** | general (60+ benchmarks) | general (1000+ tasks) | cybersecurity only (23 tasks, 8 families) |
 | **Coverage of the domain** | 1 MCQ subject, 100 questions | 1 MCQ subject, 100 questions | knowledge **and** analytical tasks: CVSS scoring, ATT&CK extraction, root-cause mapping, attacker attribution, open-ended CTI analysis |
-| **Cyber benchmarks built in** | `mmlu_computer_security` | `mmlu:computer_security` | that plus CTI-Bench, AthenaBench, SECURE, RedSage, SecEval, CyberMetric, SecBench, SEvenLLM |
+| **Cyber benchmarks built in** | `mmlu_computer_security` | `mmlu:computer_security` | that plus CTI-Bench, AthenaBench, SECURE, RedSage, SecEval, CyberMetric, SecBench |
 | **Cyber metrics** (CVSS error, ATT&CK set-F1, attacker aliases) | write your own | write your own | built in |
 | **Open-ended answers** | exact / log-prob match | exact match, or a custom metric you wire up | LLM judge is a first-class `Model` — change provider, not code |
 | **Reasoning models (`<think>`)** | you handle it | you handle it | stripped before judging; stop sequence applied to the answer only |
