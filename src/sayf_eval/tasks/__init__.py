@@ -121,8 +121,8 @@ _reg(
 )
 _reg(
     "secure_kcv",
-    "secure",
-    ds.make_hf_loader("secure_kcv", _SECURE, "KCV", "secure"),
+    "secure_kcv",
+    ds.make_hf_loader("secure_kcv", _SECURE, "KCV", "secure_kcv"),
     None,
     256,
     _hf_source(_SECURE, "KCV", "SECURE KCV"),

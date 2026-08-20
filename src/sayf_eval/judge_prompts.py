@@ -31,6 +31,14 @@ _MCQ_RULE = (
 )
 
 _RULES: dict[str, tuple[str, str]] = {
+    "secure_kcv": (
+        # True/False verification task (T/F/X), NOT A-E multiple choice.
+        "a single uppercase letter: T (true), F (false), or X (unknown). "
+        "This is a True/False verification task, not multiple choice: the only "
+        'valid answers are T, F, or X. If the model gave no clear answer, output "X".',
+        "Verdict is CORRECT if the extracted letter (T, F, or X) equals the correct "
+        "answer (case-insensitive). Otherwise INCORRECT.",
+    ),
     "seceval": (
         "uppercase letters concatenated and sorted alphabetically, e.g. "
         '"B" or "AB" or "ACD". If the model gave no clear answer, output "NONE".',
