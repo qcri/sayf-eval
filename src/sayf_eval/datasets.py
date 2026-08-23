@@ -144,8 +144,11 @@ def make_cti_ai4sec_loader(dataset_name: str, subset: str, task_type: str) -> Ca
             gt = str(row.get("GT", "")).strip()
             opts = {L: row.get(f"Option {L}") for L in _LETTERS if row.get(f"Option {L}")}
             if opts:  # multiple-choice: render the standardized prompt
+                question = str(row.get("Question", "")).strip()
+                if not question:  # options but no question -> malformed, skip
+                    continue
                 choices = _choices_to_list(opts)
-                prompt = _render_mcq(_MCQ_INSTRUCTION, str(row.get("Question", "")), choices)
+                prompt = _render_mcq(_MCQ_INSTRUCTION, question, choices)
             else:  # RCM / VSP / ATE: prebuilt Prompt column
                 choices = None
                 prompt = str(row.get("Prompt") or row.get("Question") or "").strip()
@@ -390,6 +393,8 @@ def load_cybermetric() -> list[Sample]:
             raise ValueError("CyberMetric JSON is a dict without a 'questions' key")
     else:
         rows = data
+    if not isinstance(rows, list):
+        raise ValueError(f"CyberMetric JSON question list is not a list (got {type(rows).__name__})")
     samples: list[Sample] = []
     for idx, row in enumerate(rows):
         question = row.get("question", "")
@@ -401,7 +406,12 @@ def load_cybermetric() -> list[Sample]:
             answers = {_LETTERS[i]: str(o) for i, o in enumerate(answers[:4])}
         if not isinstance(answers, dict) or not answers:
             continue
-        options = ", ".join(f"{k}) {v}" for k, v in answers.items())
+        # Order options A->E (falling back to sorted keys) so the prompt's option
+        # order always matches the letter order of ``choices`` (_choices_to_list).
+        ordered = [(k, answers[k]) for k in _LETTERS if k in answers and str(answers[k]).strip()]
+        if not ordered:
+            ordered = sorted(answers.items())
+        options = ", ".join(f"{k}) {v}" for k, v in ordered)
         prompt = (
             f"Question: {question}\n"
             f"Options: {options}\n\n"
