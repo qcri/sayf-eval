@@ -123,6 +123,82 @@ def make_hf_loader(name: str, dataset_name: str, subset: str, task_type: str) ->
     return loader
 
 
+# -- factory: original CTI-Bench (AI4Sec/cti-bench HF) ----------------------
+
+
+def make_cti_ai4sec_loader(subset: str, task_type: str) -> Callable[[], list[Sample]]:
+    """Loader for the ORIGINAL CTI-Bench (AI4Sec/cti-bench, the authors' HF
+    dataset). MCQ renders the standardized prompt from ``Question`` + ``Option
+    A``..``Option D``; the structured tasks (RCM/VSP/ATE) use the benchmark's
+    prebuilt ``Prompt``. Gold is ``GT``. Content-identical to the RISys-Lab
+    mirror (same 2500/1000/1000/60 items) but sourced from the original repo.
+    """
+
+    def loader() -> list[Sample]:
+        from datasets import load_dataset
+
+        ds = load_dataset("AI4Sec/cti-bench", subset, split="test")
+        samples: list[Sample] = []
+        for idx, row in enumerate(ds):
+            gt = str(row.get("GT", "")).strip()
+            opts = {L: row.get(f"Option {L}") for L in _LETTERS if row.get(f"Option {L}")}
+            if opts:  # multiple-choice: render the standardized prompt
+                choices = _choices_to_list(opts)
+                prompt = _render_mcq(_MCQ_INSTRUCTION, str(row.get("Question", "")), choices)
+            else:  # RCM / VSP / ATE: prebuilt Prompt column
+                choices = None
+                prompt = str(row.get("Prompt") or row.get("Question") or "").strip()
+            if not prompt:
+                continue
+            samples.append(
+                Sample(
+                    index=idx,
+                    prompt=prompt,
+                    target=gt,
+                    choices=choices,
+                    metadata={"task_type": task_type, "subset": subset},
+                )
+            )
+        return samples
+
+    return loader
+
+
+# -- factory: original SECURE (aiforsec/SECURE GitHub TSV) ------------------
+
+
+def make_secure_orig_loader(task: str, task_type: str) -> Callable[[], list[Sample]]:
+    """Loader for the ORIGINAL SECURE benchmark (github.com/aiforsec/SECURE,
+    arXiv 2405.20441). Uses the prebuilt ``Prompt`` as-is; gold is ``Correct
+    Answer``; MAET carries ``Option A``..``Option D``. Content-identical to the
+    RISys-Lab mirror for MAET (1072) and KCV (466)."""
+    url = f"https://raw.githubusercontent.com/aiforsec/SECURE/main/Dataset/SECURE%20-%20{task}.tsv"
+
+    def loader() -> list[Sample]:
+        text = _http_get(url).decode("utf-8")
+        rd = csv.DictReader(io.StringIO(text), delimiter="\t")
+        samples: list[Sample] = []
+        for idx, row in enumerate(rd):
+            prompt = (row.get("Prompt") or "").strip()
+            if not prompt:
+                continue
+            gt = str(row.get("Correct Answer") or row.get("GT") or "").strip()
+            opts = {L: row.get(f"Option {L}") for L in _LETTERS if row.get(f"Option {L}")}
+            choices = _choices_to_list(opts) if opts else None
+            samples.append(
+                Sample(
+                    index=idx,
+                    prompt=prompt,
+                    target=gt,
+                    choices=choices,
+                    metadata={"task_type": task_type, "subset": task},
+                )
+            )
+        return samples
+
+    return loader
+
+
 # -- factory: AthenaBench GitHub JSONL --------------------------------------
 
 
@@ -203,17 +279,29 @@ def load_seceval() -> list[Sample]:
 
 
 def load_cti_taa() -> list[Sample]:
-    url = "https://raw.githubusercontent.com/maveryn/cti-bench/main/data/cti-taa.tsv"
-    text = _http_get(url).decode("utf-8")
-    reader = csv.DictReader(io.StringIO(text), delimiter="\t")
-    cols = reader.fieldnames or []
-    gt_col = "GT" if "GT" in cols else ("Solution" if "Solution" in cols else None)
+    """CTI-Bench TAA from the canonical CTI-Bench repo (github.com/xashru/cti-bench).
+
+    Prompts come from ``data/cti-taa.tsv``; the gold answer key comes from
+    ``evaluation/responses/cti-taa-responses.tsv`` (``GT`` column, index-aligned).
+    The widely-mirrored TSVs ship the TAA subset WITHOUT a gold column, so an
+    earlier version left ``target=""`` and the judge graded against no gold; we
+    restore the real answer key from the authors' evaluation responses.
+    """
+    base = "https://raw.githubusercontent.com/xashru/cti-bench/main"
+    data = list(csv.DictReader(io.StringIO(_http_get(f"{base}/data/cti-taa.tsv").decode("utf-8")), delimiter="\t"))
+    gold_rows = list(
+        csv.DictReader(
+            io.StringIO(_http_get(f"{base}/evaluation/responses/cti-taa-responses.tsv").decode("utf-8")),
+            delimiter="\t",
+        )
+    )
+    gts = [str(r.get("GT", "")).strip() for r in gold_rows]
     samples: list[Sample] = []
-    for idx, row in enumerate(reader):
+    for idx, row in enumerate(data):
         prompt = (row.get("Prompt") or "").strip()
         if not prompt:
             continue
-        target = str(row.get(gt_col, "")).strip() if gt_col else ""
+        target = gts[idx] if idx < len(gts) else ""
         samples.append(
             Sample(
                 index=idx,
@@ -271,11 +359,17 @@ def load_mmlu_cs() -> list[Sample]:
 
 
 def load_cybermetric() -> list[Sample]:
-    from datasets import load_dataset
-
-    ds = load_dataset("RISys-Lab/Benchmarks_CyberSec_CyberMetrics", "cyberMetric_500", split="test")
+    """CyberMetric-500 from the ORIGINAL repo (github.com/cybermetric/CyberMetric,
+    IEEE CSR 2024). Same {question, answers, solution} schema as the RISys-Lab
+    mirror (identical 500 items); rendering is unchanged."""
+    data = json.loads(
+        _http_get("https://raw.githubusercontent.com/cybermetric/CyberMetric/main/CyberMetric-500-v1.json").decode(
+            "utf-8"
+        )
+    )
+    rows = data.get("questions", data)
     samples: list[Sample] = []
-    for idx, row in enumerate(ds):
+    for idx, row in enumerate(rows):
         question = row.get("question", "")
         answers = row.get("answers", {}) or row.get("choices", {}) or row.get("options", {}) or {}
         gt = str(row.get("solution", "")).strip()

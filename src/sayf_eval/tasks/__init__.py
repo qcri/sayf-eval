@@ -32,6 +32,12 @@ _SECEVAL_HF = "XuanwuAI/SecEval"
 _MMLU_HF = "lighteval/mmlu"
 _SEVENLLM_HF = "Multilingual-Multimodal-NLP/SEVENLLM-Dataset"
 _CTI_TAA_URL = "https://raw.githubusercontent.com/maveryn/cti-bench/main/data/cti-taa.tsv"
+# Original benchmark sources (replace the RISys-Lab mirrors where the data is
+# byte-identical). SecBench, SECURE-CWET and RedSage stay on RISys-Lab.
+_AI4SEC = "AI4Sec/cti-bench"  # original CTI-Bench (authors' HF dataset)
+_CTI_TAA_REPO = "https://github.com/xashru/cti-bench"  # original TAA prompts + gold
+_SECURE_ORIG = "https://github.com/aiforsec/SECURE"  # original SECURE (arXiv 2405.20441)
+_CYBERMETRIC_ORIG = "https://github.com/cybermetric/CyberMetric"  # original CyberMetric (IEEE CSR 2024)
 
 
 # ── Declared dataset provenance (see Task.source). One of three neutral shapes;
@@ -71,45 +77,45 @@ def _reg(name, task_type, loader, system_prompt=None, max_tokens=1024, source=No
 _reg(
     "mcq",
     "mcq",
-    ds.make_hf_loader("mcq", _HF, "cti-mcq", "mcq"),
+    ds.make_cti_ai4sec_loader("cti-mcq", "mcq"),
     _CTI,
     1024,
-    _hf_source(_HF, "cti-mcq", "CTI-Bench MCQ"),
+    _hf_source(_AI4SEC, "cti-mcq", "CTI-Bench MCQ"),
 )
 _reg(
     "rcm",
     "rcm",
-    ds.make_hf_loader("rcm", _HF, "cti-rcm", "rcm"),
+    ds.make_cti_ai4sec_loader("cti-rcm", "rcm"),
     _CTI,
     512,
-    _hf_source(_HF, "cti-rcm", "CTI-Bench RCM (CWE mapping)"),
+    _hf_source(_AI4SEC, "cti-rcm", "CTI-Bench RCM (CWE mapping)"),
 )
 _reg(
     "vsp",
     "vsp",
-    ds.make_hf_loader("vsp", _HF, "cti-vsp", "vsp"),
+    ds.make_cti_ai4sec_loader("cti-vsp", "vsp"),
     _CTI,
     2048,
-    _hf_source(_HF, "cti-vsp", "CTI-Bench VSP (CVSS)"),
+    _hf_source(_AI4SEC, "cti-vsp", "CTI-Bench VSP (CVSS)"),
 )
 _reg(
     "ate",
     "ate",
-    ds.make_hf_loader("ate", _HF, "cti-ate", "ate"),
+    ds.make_cti_ai4sec_loader("cti-ate", "ate"),
     _CTI,
     1024,
-    _hf_source(_HF, "cti-ate", "CTI-Bench ATE (ATT&CK)"),
+    _hf_source(_AI4SEC, "cti-ate", "CTI-Bench ATE (ATT&CK)"),
 )
-_reg("cti_taa", "taa", ds.load_cti_taa, _CTI, 512, _url_source(_CTI_TAA_URL, "CTI-Bench TAA"))
+_reg("cti_taa", "taa", ds.load_cti_taa, _CTI, 512, _url_source(_CTI_TAA_REPO, "CTI-Bench TAA"))
 
 # ── SECURE (ICS/OT MCQ) — Prompt prebuilt, no system prompt ──────────────────
 _reg(
     "secure_maet",
     "secure",
-    ds.make_hf_loader("secure_maet", _SECURE, "MAET", "secure"),
+    ds.make_secure_orig_loader("MAET", "secure"),
     None,
     256,
-    _hf_source(_SECURE, "MAET", "SECURE MAET"),
+    _url_source(_SECURE_ORIG, "SECURE MAET"),
 )
 _reg(
     "secure_cwet",
@@ -122,10 +128,10 @@ _reg(
 _reg(
     "secure_kcv",
     "secure_kcv",
-    ds.make_hf_loader("secure_kcv", _SECURE, "KCV", "secure_kcv"),
+    ds.make_secure_orig_loader("KCV", "secure_kcv"),
     None,
     256,
-    _hf_source(_SECURE, "KCV", "SECURE KCV"),
+    _url_source(_SECURE_ORIG, "SECURE KCV"),
 )
 
 # ── SecBench (English MCQ) — RedSage wording, no system prompt ────────────────
@@ -214,7 +220,7 @@ _reg(
     ds.load_cybermetric,
     _CYBERMETRIC,
     256,
-    _hf_source(_CYBERMETRIC_HF, "cyberMetric_500", "CyberMetric-500"),
+    _url_source(_CYBERMETRIC_ORIG, "CyberMetric-500"),
 )
 _reg(
     "mmlu-cs",
