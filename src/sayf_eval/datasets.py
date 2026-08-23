@@ -414,12 +414,12 @@ def load_cybermetric() -> list[Sample]:
         if not isinstance(answers, dict) or not answers:
             continue
         # CyberMetric is a strictly 4-option (A-D) MCQ and the prompt instructs
-        # "A, B, C, or D" only, so keep just A-D in order (dropping any stray E+
-        # or blank option) so the prompt and ``choices`` stay consistent. Fall
-        # back to sorted keys only for an unexpected non-letter schema.
-        ad = {k: answers[k] for k in ("A", "B", "C", "D") if k in answers and str(answers[k]).strip()}
-        answers = ad or {k: v for k, v in sorted(answers.items()) if str(v).strip()}
-        if not answers:
+        # "A, B, C, or D" only. Require all four options present and non-blank so
+        # the rendered prompt and ``choices`` are always internally consistent;
+        # skip any malformed row (missing/blank option, stray E+, or non A-D
+        # schema) rather than render a prompt whose letters don't match.
+        answers = {k: answers[k] for k in ("A", "B", "C", "D") if k in answers and str(answers[k]).strip()}
+        if len(answers) != 4:
             continue
         options = ", ".join(f"{k}) {v}" for k, v in answers.items())
         prompt = (

@@ -97,10 +97,17 @@ def test_cybermetric_dict_schema(monkeypatch):
 
 
 def test_cybermetric_toplevel_list_schema(monkeypatch):
-    payload = json.dumps([{"question": "Q2?", "answers": {"A": "a", "B": "b"}, "solution": "B"}])
+    payload = json.dumps([{"question": "Q2?", "answers": {"A": "a", "B": "b", "C": "c", "D": "d"}, "solution": "B"}])
     monkeypatch.setattr(ds, "_http_get", lambda url, **k: payload.encode())
     s = ds.load_cybermetric()
     assert len(s) == 1 and s[0].target == "B"
+
+
+def test_cybermetric_skips_incomplete_options(monkeypatch):
+    # Only three options -> cannot render a consistent "A, B, C, or D" prompt; skip.
+    payload = json.dumps([{"question": "Q?", "answers": {"A": "a", "B": "b", "C": "c"}, "solution": "A"}])
+    monkeypatch.setattr(ds, "_http_get", lambda url, **k: payload.encode())
+    assert ds.load_cybermetric() == []
 
 
 def test_cybermetric_raises_on_non_list_questions(monkeypatch):
