@@ -24,7 +24,7 @@ def test_cti_ai4sec_mcq_renders_from_question_and_options(monkeypatch):
         }
     ]
     monkeypatch.setattr(hf, "load_dataset", lambda *a, **k: rows)
-    s = ds.make_cti_ai4sec_loader("cti-mcq", "mcq")()
+    s = ds.make_cti_ai4sec_loader("AI4Sec/cti-bench", "cti-mcq", "mcq")()
     assert len(s) == 1
     assert s[0].target == "B"
     assert s[0].choices == ["A. a", "B. b", "C. c", "D. d"]
@@ -36,7 +36,7 @@ def test_cti_ai4sec_structured_uses_prompt_column(monkeypatch):
 
     rows = [{"URL": "u", "Description": "d", "Prompt": "the rcm prompt", "GT": "CWE-79"}]
     monkeypatch.setattr(hf, "load_dataset", lambda *a, **k: rows)
-    s = ds.make_cti_ai4sec_loader("cti-rcm", "rcm")()
+    s = ds.make_cti_ai4sec_loader("AI4Sec/cti-bench", "cti-rcm", "rcm")()
     assert s[0].prompt == "the rcm prompt"
     assert s[0].target == "CWE-79"
     assert s[0].choices is None
@@ -53,7 +53,7 @@ def test_secure_orig_maet_options_and_gold(monkeypatch):
     assert s[0].choices == ["A. a", "B. b", "C. c", "D. d"]
 
 
-def test_secure_orig_kcv_tfx_gold_no_options(monkeypatch):
+def test_secure_orig_kcv_gold_no_options(monkeypatch):
     tsv = "URL\tPrompt\tQuestion\tCorrect Answer\nu\tPfull\tIs it true?\tF\n"
     monkeypatch.setattr(ds, "_http_get", lambda url, **k: tsv.encode())
     s = ds.make_secure_orig_loader("KCV", "secure_kcv")()

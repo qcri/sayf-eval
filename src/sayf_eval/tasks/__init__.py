@@ -72,11 +72,11 @@ def _reg(name, task_type, loader, system_prompt=None, max_tokens=1024, source=No
     )
 
 
-# ── CTI-Bench (RISys-Lab HF) — domain system prompt ──────────────────────────
+# ── CTI-Bench (AI4Sec/cti-bench, original HF) — domain system prompt ──────────
 _reg(
     "mcq",
     "mcq",
-    ds.make_cti_ai4sec_loader("cti-mcq", "mcq"),
+    ds.make_cti_ai4sec_loader(_AI4SEC, "cti-mcq", "mcq"),
     _CTI,
     1024,
     _hf_source(_AI4SEC, "cti-mcq", "CTI-Bench MCQ"),
@@ -84,7 +84,7 @@ _reg(
 _reg(
     "rcm",
     "rcm",
-    ds.make_cti_ai4sec_loader("cti-rcm", "rcm"),
+    ds.make_cti_ai4sec_loader(_AI4SEC, "cti-rcm", "rcm"),
     _CTI,
     512,
     _hf_source(_AI4SEC, "cti-rcm", "CTI-Bench RCM (CWE mapping)"),
@@ -92,7 +92,7 @@ _reg(
 _reg(
     "vsp",
     "vsp",
-    ds.make_cti_ai4sec_loader("cti-vsp", "vsp"),
+    ds.make_cti_ai4sec_loader(_AI4SEC, "cti-vsp", "vsp"),
     _CTI,
     2048,
     _hf_source(_AI4SEC, "cti-vsp", "CTI-Bench VSP (CVSS)"),
@@ -100,7 +100,7 @@ _reg(
 _reg(
     "ate",
     "ate",
-    ds.make_cti_ai4sec_loader("cti-ate", "ate"),
+    ds.make_cti_ai4sec_loader(_AI4SEC, "cti-ate", "ate"),
     _CTI,
     1024,
     _hf_source(_AI4SEC, "cti-ate", "CTI-Bench ATE (ATT&CK)"),

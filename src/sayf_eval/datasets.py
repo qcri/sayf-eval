@@ -126,18 +126,19 @@ def make_hf_loader(name: str, dataset_name: str, subset: str, task_type: str) ->
 # -- factory: original CTI-Bench (AI4Sec/cti-bench HF) ----------------------
 
 
-def make_cti_ai4sec_loader(subset: str, task_type: str) -> Callable[[], list[Sample]]:
+def make_cti_ai4sec_loader(dataset_name: str, subset: str, task_type: str) -> Callable[[], list[Sample]]:
     """Loader for the ORIGINAL CTI-Bench (AI4Sec/cti-bench, the authors' HF
-    dataset). MCQ renders the standardized prompt from ``Question`` + ``Option
-    A``..``Option D``; the structured tasks (RCM/VSP/ATE) use the benchmark's
-    prebuilt ``Prompt``. Gold is ``GT``. Content-identical to the RISys-Lab
-    mirror (same 2500/1000/1000/60 items) but sourced from the original repo.
+    dataset; ``dataset_name`` is passed from the registry so the loader and the
+    provenance metadata cannot drift). MCQ renders the standardized prompt from
+    ``Question`` + ``Option A``..``Option D``; the structured tasks (RCM/VSP/ATE)
+    use the benchmark's prebuilt ``Prompt``. Gold is ``GT``. Content-identical to
+    the RISys-Lab mirror (same 2500/1000/1000/60 items) but from the original repo.
     """
 
     def loader() -> list[Sample]:
         from datasets import load_dataset
 
-        ds = load_dataset("AI4Sec/cti-bench", subset, split="test")
+        ds = load_dataset(dataset_name, subset, split="test")
         samples: list[Sample] = []
         for idx, row in enumerate(ds):
             gt = str(row.get("GT", "")).strip()
@@ -296,12 +297,18 @@ def load_cti_taa() -> list[Sample]:
         )
     )
     gts = [str(r.get("GT", "")).strip() for r in gold_rows]
-    # Fail fast on misalignment: a silent empty-gold fallback would reintroduce
-    # the exact "graded against no gold" failure this loader exists to fix.
+    # Fail fast on misalignment OR a missing/blank gold column: a silent
+    # empty-gold fallback would reintroduce the exact "graded against no gold"
+    # failure this loader exists to fix.
     if len(data) != len(gts):
         raise ValueError(
             f"CTI-TAA prompt/gold length mismatch: {len(data)} prompt rows vs "
             f"{len(gts)} gold rows — cannot index-align the answer key."
+        )
+    if not gts or any(not g for g in gts):
+        raise ValueError(
+            "CTI-TAA gold answer key is missing or has empty GT values "
+            "(expected a non-empty 'GT' column in cti-taa-responses.tsv)."
         )
     samples: list[Sample] = []
     for idx, row in enumerate(data):
@@ -374,7 +381,12 @@ def load_cybermetric() -> list[Sample]:
             "utf-8"
         )
     )
-    rows = data["questions"] if isinstance(data, dict) else data
+    if isinstance(data, dict):
+        rows = data.get("questions")
+        if rows is None:
+            raise ValueError("CyberMetric JSON is a dict without a 'questions' key")
+    else:
+        rows = data
     samples: list[Sample] = []
     for idx, row in enumerate(rows):
         question = row.get("question", "")
