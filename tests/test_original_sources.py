@@ -104,6 +104,17 @@ def test_secure_orig_maet_options_and_gold(monkeypatch):
     assert s[0].choices == ["A. a", "B. b", "C. c", "D. d"]
 
 
+def test_secure_orig_maet_restricts_to_ad(monkeypatch):
+    # A stray Option E must not leak into choices (SECURE MAET is A-D).
+    tsv = (
+        "URL\tPrompt\tQuestion\tOption A\tOption B\tOption C\tOption D\tOption E\tCorrect Answer\n"
+        "u\tPfull\tQ?\ta\tb\tc\td\te\tA\n"
+    )
+    monkeypatch.setattr(ds, "_http_get", lambda url, **k: tsv.encode())
+    s = ds.make_secure_orig_loader("MAET", "secure")()
+    assert s[0].choices == ["A. a", "B. b", "C. c", "D. d"]
+
+
 def test_secure_orig_kcv_gold_no_options(monkeypatch):
     tsv = "URL\tPrompt\tQuestion\tCorrect Answer\nu\tPfull\tIs it true?\tF\n"
     monkeypatch.setattr(ds, "_http_get", lambda url, **k: tsv.encode())

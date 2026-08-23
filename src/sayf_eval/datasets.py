@@ -204,7 +204,12 @@ def make_secure_orig_loader(task: str, task_type: str) -> Callable[[], list[Samp
             if not prompt:
                 continue
             gt = str(row.get("Correct Answer") or row.get("GT") or "").strip()
-            opts = {L: row.get(f"Option {L}") for L in _LETTERS if row.get(f"Option {L}")}
+            # SECURE MAET is A-D (KCV has no options); restrict extraction to A-D
+            # and treat whitespace-only cells as empty so a stray "Option E" can't
+            # leak into choices and choices stays consistent with the format.
+            opts = {
+                L: row.get(f"Option {L}") for L in ("A", "B", "C", "D") if str(row.get(f"Option {L}") or "").strip()
+            }
             choices = _choices_to_list(opts) if opts else None
             samples.append(
                 Sample(
