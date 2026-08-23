@@ -69,6 +69,30 @@ def test_cti_ai4sec_mcq_skips_whitespace_only_options(monkeypatch):
     assert [x.target for x in s] == ["B"]
 
 
+def test_cti_ai4sec_mcq_restricts_to_ad_and_none_safe_gold(monkeypatch):
+    import datasets as hf
+
+    # A stray Option E must be dropped (instruction is A-D); GT=None must become
+    # "" rather than the literal string "None".
+    rows = [
+        {
+            "URL": "u",
+            "Question": "Q?",
+            "Option A": "a",
+            "Option B": "b",
+            "Option C": "c",
+            "Option D": "d",
+            "Option E": "e",
+            "GT": None,
+        }
+    ]
+    monkeypatch.setattr(hf, "load_dataset", lambda *a, **k: rows)
+    s = ds.make_cti_ai4sec_loader("AI4Sec/cti-bench", "cti-mcq", "mcq")()
+    assert s[0].choices == ["A. a", "B. b", "C. c", "D. d"]
+    assert "E. e" not in s[0].prompt
+    assert s[0].target == ""
+
+
 def test_secure_orig_maet_options_and_gold(monkeypatch):
     tsv = (
         "URL\tPrompt\tQuestion\tOption A\tOption B\tOption C\tOption D\tCorrect Answer\nu\tPfull\tQ?\ta\tb\tc\td\tA\n"

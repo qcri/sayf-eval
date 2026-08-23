@@ -145,13 +145,21 @@ def make_cti_ai4sec_loader(dataset_name: str, subset: str, task_type: str) -> Ca
         is_mcq = task_type == "mcq"
         samples: list[Sample] = []
         for idx, row in enumerate(ds):
-            gt = str(row.get("GT", "")).strip()
+            # None-safe: a missing/None cell must become "" (not the string
+            # "None"), which would silently corrupt the label/prompt.
+            gt = str(row.get("GT") or "").strip()
             if is_mcq:  # multiple-choice: render the standardized prompt
-                question = str(row.get("Question", "")).strip()
-                # Keep only options with non-blank values (whitespace is falsy
-                # here), so a whitespace-only column can't yield choices=None
-                # and crash _render_mcq.
-                opts = {L: row.get(f"Option {L}") for L in _LETTERS if str(row.get(f"Option {L}") or "").strip()}
+                question = str(row.get("Question") or "").strip()
+                # CTI-Bench MCQ is A-D (see _MCQ_INSTRUCTION); restrict extraction
+                # to A-D so a stray "Option E" can't leak into the prompt/choices.
+                # Keep only non-blank values (whitespace is falsy here) so a
+                # whitespace-only column can't yield choices=None and crash
+                # _render_mcq.
+                opts = {
+                    L: row.get(f"Option {L}")
+                    for L in ("A", "B", "C", "D")
+                    if str(row.get(f"Option {L}") or "").strip()
+                }
                 choices = _choices_to_list(opts)
                 if not question or not choices:  # malformed MCQ row -> skip
                     continue
@@ -288,7 +296,7 @@ def load_seceval() -> list[Sample]:
     return samples
 
 
-# -- CTI-Bench TAA (maveryn TSV; no published GT) ---------------------------
+# -- CTI-Bench TAA (xashru/cti-bench: original prompts + published gold key) --
 
 
 def load_cti_taa() -> list[Sample]:
