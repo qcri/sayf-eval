@@ -55,6 +55,20 @@ def test_cti_ai4sec_mcq_skips_row_with_empty_question(monkeypatch):
     assert "Question: Real?" in s[0].prompt
 
 
+def test_cti_ai4sec_mcq_skips_whitespace_only_options(monkeypatch):
+    import datasets as hf
+
+    # Whitespace-only options are truthy but strip to empty -> choices would be
+    # None; the row must be skipped rather than crash _render_mcq.
+    rows = [
+        {"URL": "u0", "Question": "Q?", "Option A": "   ", "Option B": "\t", "GT": "A"},
+        {"URL": "u1", "Question": "Real?", "Option A": "a", "Option B": "b", "GT": "B"},
+    ]
+    monkeypatch.setattr(hf, "load_dataset", lambda *a, **k: rows)
+    s = ds.make_cti_ai4sec_loader("AI4Sec/cti-bench", "cti-mcq", "mcq")()
+    assert [x.target for x in s] == ["B"]
+
+
 def test_secure_orig_maet_options_and_gold(monkeypatch):
     tsv = (
         "URL\tPrompt\tQuestion\tOption A\tOption B\tOption C\tOption D\tCorrect Answer\nu\tPfull\tQ?\ta\tb\tc\td\tA\n"
@@ -104,6 +118,18 @@ def test_cybermetric_option_order_matches_choices(monkeypatch):
     s = ds.load_cybermetric()
     assert s[0].choices == ["A. a", "B. b", "C. c", "D. d"]
     assert "A) a, B) b, C) c, D) d" in s[0].prompt
+
+
+def test_cybermetric_drops_stray_e_option(monkeypatch):
+    # The prompt instructs "A, B, C, or D" only; a stray E must not leak into
+    # the rendered options or choices.
+    payload = json.dumps(
+        [{"question": "Q?", "answers": {"A": "a", "B": "b", "C": "c", "D": "d", "E": "e"}, "solution": "A"}]
+    )
+    monkeypatch.setattr(ds, "_http_get", lambda url, **k: payload.encode())
+    s = ds.load_cybermetric()
+    assert s[0].choices == ["A. a", "B. b", "C. c", "D. d"]
+    assert "E)" not in s[0].prompt and "E. e" not in " ".join(s[0].choices)
 
 
 def test_cti_taa_gold_index_aligned_and_nonempty(monkeypatch):

@@ -139,15 +139,22 @@ def make_cti_ai4sec_loader(dataset_name: str, subset: str, task_type: str) -> Ca
         from datasets import load_dataset
 
         ds = load_dataset(dataset_name, subset, split="test")
+        # The task_type (from the registry) is the authoritative discriminator:
+        # only "mcq" renders the standardized Question+options prompt; the
+        # structured tasks (rcm/vsp/ate) use the prebuilt ``Prompt`` column.
+        is_mcq = task_type == "mcq"
         samples: list[Sample] = []
         for idx, row in enumerate(ds):
             gt = str(row.get("GT", "")).strip()
-            opts = {L: row.get(f"Option {L}") for L in _LETTERS if row.get(f"Option {L}")}
-            if opts:  # multiple-choice: render the standardized prompt
+            if is_mcq:  # multiple-choice: render the standardized prompt
                 question = str(row.get("Question", "")).strip()
-                if not question:  # options but no question -> malformed, skip
-                    continue
+                # Keep only options with non-blank values (whitespace is falsy
+                # here), so a whitespace-only column can't yield choices=None
+                # and crash _render_mcq.
+                opts = {L: row.get(f"Option {L}") for L in _LETTERS if str(row.get(f"Option {L}") or "").strip()}
                 choices = _choices_to_list(opts)
+                if not question or not choices:  # malformed MCQ row -> skip
+                    continue
                 prompt = _render_mcq(_MCQ_INSTRUCTION, question, choices)
             else:  # RCM / VSP / ATE: prebuilt Prompt column
                 choices = None
@@ -406,12 +413,15 @@ def load_cybermetric() -> list[Sample]:
             answers = {_LETTERS[i]: str(o) for i, o in enumerate(answers[:4])}
         if not isinstance(answers, dict) or not answers:
             continue
-        # Order options A->E (falling back to sorted keys) so the prompt's option
-        # order always matches the letter order of ``choices`` (_choices_to_list).
-        ordered = [(k, answers[k]) for k in _LETTERS if k in answers and str(answers[k]).strip()]
-        if not ordered:
-            ordered = sorted(answers.items())
-        options = ", ".join(f"{k}) {v}" for k, v in ordered)
+        # CyberMetric is a strictly 4-option (A-D) MCQ and the prompt instructs
+        # "A, B, C, or D" only, so keep just A-D in order (dropping any stray E+
+        # or blank option) so the prompt and ``choices`` stay consistent. Fall
+        # back to sorted keys only for an unexpected non-letter schema.
+        ad = {k: answers[k] for k in ("A", "B", "C", "D") if k in answers and str(answers[k]).strip()}
+        answers = ad or {k: v for k, v in sorted(answers.items()) if str(v).strip()}
+        if not answers:
+            continue
+        options = ", ".join(f"{k}) {v}" for k, v in answers.items())
         prompt = (
             f"Question: {question}\n"
             f"Options: {options}\n\n"
