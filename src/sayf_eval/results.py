@@ -28,7 +28,9 @@ from sayf_eval import __version__
 from sayf_eval.model import GenParams
 
 
-SCHEMA_VERSION = "1.0"
+# 1.1 adds the additive judge_prompt_templates field to the record, so consumers
+# can distinguish records that carry it from earlier 1.0 records that do not.
+SCHEMA_VERSION = "1.1"
 
 # Fixed, documented standardized choices (see README "Standardized pipeline
 # choices"). Recorded so a score is never reported without the policy behind it.

@@ -98,7 +98,7 @@ def test_scores_record_carries_no_item_text():
     # item text); exclude that field so its schema tokens don't false-positive.
     d.pop("judge_prompt_templates", None)
     blob = json.dumps(d).lower()
-    for forbidden in ("model_response", "extracted_answer", "ground_truth", "question"):
+    for forbidden in ("prompt", "model_response", "extracted_answer", "ground_truth", "question"):
         assert forbidden not in blob
 
 
