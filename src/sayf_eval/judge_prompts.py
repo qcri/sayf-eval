@@ -31,6 +31,21 @@ _MCQ_RULE = (
 )
 
 _RULES: dict[str, tuple[str, str]] = {
+    "secure_kcv": (
+        # True/False verification task (T/F/X), NOT A-E multiple choice.
+        # X is a first-class answer the task offers ("if you do not know, return
+        # X"), so a deliberate "unknown" must extract to X. A response with no
+        # discernible answer must fall back to the NONE sentinel (never a valid
+        # label) so abstention stays INCORRECT — do NOT default it to X, which
+        # would score unanswered items as correct whenever the gold answer is X.
+        "a single uppercase letter: T (true) or F (false); or X when the model "
+        "explicitly answers that it does not know / cannot be determined. This "
+        "is a True/False verification task, not multiple choice. If the response "
+        'contains no discernible answer at all, output "NONE".',
+        "Verdict is CORRECT if the extracted letter (T, F, or X) equals the "
+        'correct answer (case-insensitive). "NONE" is never a valid answer and '
+        "is always INCORRECT.",
+    ),
     "seceval": (
         "uppercase letters concatenated and sorted alphabetically, e.g. "
         '"B" or "AB" or "ACD". If the model gave no clear answer, output "NONE".',
