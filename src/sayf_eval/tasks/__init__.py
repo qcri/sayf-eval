@@ -31,7 +31,6 @@ _CYBERMETRIC_HF = "RISys-Lab/Benchmarks_CyberSec_CyberMetrics"
 _SECEVAL_HF = "XuanwuAI/SecEval"
 _MMLU_HF = "lighteval/mmlu"
 _SEVENLLM_HF = "Multilingual-Multimodal-NLP/SEVENLLM-Dataset"
-_CTI_TAA_URL = "https://raw.githubusercontent.com/maveryn/cti-bench/main/data/cti-taa.tsv"
 # Original benchmark sources (replace the RISys-Lab mirrors where the data is
 # byte-identical). SecBench, SECURE-CWET and RedSage stay on RISys-Lab.
 _AI4SEC = "AI4Sec/cti-bench"  # original CTI-Bench (authors' HF dataset)

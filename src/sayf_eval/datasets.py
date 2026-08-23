@@ -296,12 +296,19 @@ def load_cti_taa() -> list[Sample]:
         )
     )
     gts = [str(r.get("GT", "")).strip() for r in gold_rows]
+    # Fail fast on misalignment: a silent empty-gold fallback would reintroduce
+    # the exact "graded against no gold" failure this loader exists to fix.
+    if len(data) != len(gts):
+        raise ValueError(
+            f"CTI-TAA prompt/gold length mismatch: {len(data)} prompt rows vs "
+            f"{len(gts)} gold rows — cannot index-align the answer key."
+        )
     samples: list[Sample] = []
     for idx, row in enumerate(data):
         prompt = (row.get("Prompt") or "").strip()
         if not prompt:
             continue
-        target = gts[idx] if idx < len(gts) else ""
+        target = gts[idx]
         samples.append(
             Sample(
                 index=idx,
@@ -367,7 +374,7 @@ def load_cybermetric() -> list[Sample]:
             "utf-8"
         )
     )
-    rows = data.get("questions", data)
+    rows = data["questions"] if isinstance(data, dict) else data
     samples: list[Sample] = []
     for idx, row in enumerate(rows):
         question = row.get("question", "")
