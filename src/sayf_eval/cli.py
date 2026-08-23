@@ -111,6 +111,29 @@ def _add_push_args(p: argparse.ArgumentParser) -> None:
     p.add_argument("--hf-token", default=None, help="HF token (else uses $HF_TOKEN).")
 
 
+def _judge_prompt_templates(tasks) -> dict:
+    """Render each task's judge prompt as a template (placeholders, no item text).
+
+    Lets the results record carry the actual extract+verdict prompt scaffolding
+    so downstream exporters record the real judge prompt rather than a description.
+    """
+    from sayf_eval.judge_prompts import create_judge_prompt
+
+    templates: dict[str, str] = {}
+    for t in tasks:
+        try:
+            templates[t.name] = create_judge_prompt(
+                t.task_type,
+                "{question}",
+                "{model_answer}",
+                "{ground_truth}",
+                {"choices": "{choices}"},
+            )
+        except ValueError:
+            continue  # unknown task_type — skip rather than fabricate a prompt
+    return templates
+
+
 def _export_results(args, summary: dict, tasks) -> None:
     """Build + save the canonical scores record, then push if requested."""
     from sayf_eval.results import build_record, push_details, push_scores, save_record
@@ -125,6 +148,7 @@ def _export_results(args, summary: dict, tasks) -> None:
         max_tokens_override=args.max_tokens,
         answer_stop=args.answer_stop,
         task_sources={t.name: (t.source or {}) for t in tasks},
+        judge_prompt_templates=_judge_prompt_templates(tasks),
     )
     path = save_record(record, args.output_dir)
     print(f"results record → {path}")

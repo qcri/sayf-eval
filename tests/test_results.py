@@ -68,10 +68,37 @@ def test_record_embeds_task_sources():
     assert r["task_sources"]["vsp"]["subset"] == "cti-vsp"
 
 
+def test_record_embeds_judge_prompt_templates():
+    # The record carries the actual extract+verdict prompt scaffolding (placeholders
+    # only), keyed by task, so exporters record the real judge prompt not a blurb.
+    import sayf_eval.tasks  # noqa: F401 — register
+    from sayf_eval.cli import _judge_prompt_templates
+    from sayf_eval.registry import get_task
+
+    tpls = _judge_prompt_templates([get_task("mcq"), get_task("secure_kcv")])
+    r = build_record(
+        SUMMARY,
+        model="openai/gpt-4o",
+        judge="anthropic/claude-sonnet-4",
+        gen_params=GenParams(),
+        task_sources=TASK_SOURCES,
+        judge_prompt_templates=tpls,
+    ).to_dict()
+    assert r["judge_prompt_templates"]["mcq"].startswith("You are a strict evaluator")
+    # secure_kcv uses its True/False rule, not the A–E MCQ one
+    assert "T (true) or F (false)" in r["judge_prompt_templates"]["secure_kcv"]
+    # placeholders only — no item text
+    assert "{question}" in r["judge_prompt_templates"]["mcq"]
+
+
 def test_scores_record_carries_no_item_text():
-    # Hard invariant: the scores artifact must never contain prompt/answer text.
-    blob = json.dumps(_record().to_dict()).lower()
-    for forbidden in ("prompt", "model_response", "extracted_answer", "ground_truth"):
+    # Hard invariant: the scores artifact must never contain per-sample item text.
+    d = _record().to_dict()
+    # judge_prompt_templates are static prompt scaffolding (placeholders only, no
+    # item text); exclude that field so its schema tokens don't false-positive.
+    d.pop("judge_prompt_templates", None)
+    blob = json.dumps(d).lower()
+    for forbidden in ("prompt", "model_response", "extracted_answer", "ground_truth", "question"):
         assert forbidden not in blob
 
 

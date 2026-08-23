@@ -28,7 +28,9 @@ from sayf_eval import __version__
 from sayf_eval.model import GenParams
 
 
-SCHEMA_VERSION = "1.0"
+# 1.1 adds the additive judge_prompt_templates field to the record, so consumers
+# can distinguish records that carry it from earlier 1.0 records that do not.
+SCHEMA_VERSION = "1.1"
 
 # Fixed, documented standardized choices (see README "Standardized pipeline
 # choices"). Recorded so a score is never reported without the policy behind it.
@@ -71,6 +73,10 @@ class ResultsRecord:
     # Task.source). Makes the record self-describing so downstream exporters need
     # no knowledge of sayf-eval internals. Carries no prompt/gold/response text.
     task_sources: dict = field(default_factory=dict)
+    # {task: judge prompt template} — the actual extract+verdict prompt scaffolding
+    # (placeholders only, no item text) so downstream exporters can record the real
+    # judge prompt instead of a description. Empty when not supplied.
+    judge_prompt_templates: dict = field(default_factory=dict)
     sayf_eval_version: str = __version__
     schema_version: str = SCHEMA_VERSION
     created_at: str = field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
@@ -90,6 +96,7 @@ def build_record(
     max_tokens_override: int | None = None,
     answer_stop: list[str] | None = None,
     task_sources: dict[str, dict] | None = None,
+    judge_prompt_templates: dict[str, str] | None = None,
 ) -> ResultsRecord:
     """Assemble the scores record from a run summary + the pipeline configuration.
 
@@ -116,6 +123,7 @@ def build_record(
         results=summary,
         tasks=sorted(summary.keys()),
         task_sources=task_sources or {},
+        judge_prompt_templates=judge_prompt_templates or {},
     )
 
 
