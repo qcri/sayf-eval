@@ -171,8 +171,10 @@ def make_cti_ai4sec_loader(dataset_name: str, subset: str, task_type: str) -> Ca
 def make_secure_orig_loader(task: str, task_type: str) -> Callable[[], list[Sample]]:
     """Loader for the ORIGINAL SECURE benchmark (github.com/aiforsec/SECURE,
     arXiv 2405.20441). Uses the prebuilt ``Prompt`` as-is; gold is ``Correct
-    Answer``; MAET carries ``Option A``..``Option D``. Content-identical to the
-    RISys-Lab mirror for MAET (1072) and KCV (466)."""
+    Answer``; MAET carries ``Option A``..``Option D``. On the rows it shares with
+    the RISys-Lab mirror (MAET 1067, KCV 461) the content is byte-identical; the
+    original additionally includes the items the mirror split into a validation
+    split (full original: MAET 1072, KCV 466)."""
     url = f"https://raw.githubusercontent.com/aiforsec/SECURE/main/Dataset/SECURE%20-%20{task}.tsv"
 
     def loader() -> list[Sample]:
@@ -374,8 +376,9 @@ def load_mmlu_cs() -> list[Sample]:
 
 def load_cybermetric() -> list[Sample]:
     """CyberMetric-500 from the ORIGINAL repo (github.com/cybermetric/CyberMetric,
-    IEEE CSR 2024). Same {question, answers, solution} schema as the RISys-Lab
-    mirror (identical 500 items); rendering is unchanged."""
+    IEEE CSR 2024), which is canonical. Same {question, answers, solution} schema
+    and size (500) as the RISys-Lab mirror, though a few items differ from the
+    mirror; rendering is unchanged."""
     data = json.loads(
         _http_get("https://raw.githubusercontent.com/cybermetric/CyberMetric/main/CyberMetric-500-v1.json").decode(
             "utf-8"
