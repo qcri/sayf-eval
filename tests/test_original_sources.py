@@ -148,6 +148,21 @@ def test_secure_orig_maet_restricts_to_ad(monkeypatch):
     assert s[0].choices == ["A. a", "B. b", "C. c", "D. d"]
 
 
+def test_secure_orig_maet_skips_partial_option_set(monkeypatch):
+    # SECURE MAET is a strict 4-option MCQ: a row with only A/B (some but not all
+    # of A-D) would render choices that disagree with the task's A-D instruction,
+    # so it must be dropped. A full A-D row on the same TSV is the control.
+    tsv = (
+        "URL\tPrompt\tQuestion\tOption A\tOption B\tOption C\tOption D\tCorrect Answer\n"
+        "u0\tPpartial\tQ?\ta\tb\t\t\tA\n"  # only A/B populated -> skip
+        "u1\tPfull\tQ?\ta\tb\tc\td\tB\n"  # full A-D -> kept
+    )
+    monkeypatch.setattr(ds, "_http_get", lambda url, **k: tsv.encode())
+    s = ds.make_secure_orig_loader("MAET", "secure")()
+    assert [x.target for x in s] == ["B"]
+    assert s[0].choices == ["A. a", "B. b", "C. c", "D. d"]
+
+
 def test_secure_orig_kcv_gold_no_options(monkeypatch):
     tsv = "URL\tPrompt\tQuestion\tCorrect Answer\nu\tPfull\tIs it true?\tF\n"
     monkeypatch.setattr(ds, "_http_get", lambda url, **k: tsv.encode())
