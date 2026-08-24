@@ -46,10 +46,24 @@ def test_cti_ai4sec_mcq_skips_row_with_empty_question(monkeypatch):
     import datasets as hf
 
     rows = [
-        {"URL": "u0", "Question": "", "Option A": "a", "Option B": "b",
-         "Option C": "c", "Option D": "d", "GT": "A"},  # no question -> skip
-        {"URL": "u1", "Question": "Real?", "Option A": "a", "Option B": "b",
-         "Option C": "c", "Option D": "d", "GT": "B"},
+        {
+            "URL": "u0",
+            "Question": "",
+            "Option A": "a",
+            "Option B": "b",
+            "Option C": "c",
+            "Option D": "d",
+            "GT": "A",
+        },  # no question -> skip
+        {
+            "URL": "u1",
+            "Question": "Real?",
+            "Option A": "a",
+            "Option B": "b",
+            "Option C": "c",
+            "Option D": "d",
+            "GT": "B",
+        },
     ]
     monkeypatch.setattr(hf, "load_dataset", lambda *a, **k: rows)
     s = ds.make_cti_ai4sec_loader("AI4Sec/cti-bench", "cti-mcq", "mcq")()
