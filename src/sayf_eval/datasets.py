@@ -435,7 +435,10 @@ def load_cybermetric() -> list[Sample]:
         if not question:
             continue
         if isinstance(answers, list):
-            answers = {_LETTERS[i]: str(o) for i, o in enumerate(answers[:4])}
+            # None-safe: str(None) is "None" (truthy), which would survive the
+            # A-D filter below and render "A) None"; coerce a null element to ""
+            # so it drops the row via the len(...)!=4 check.
+            answers = {_LETTERS[i]: ("" if o is None else str(o)) for i, o in enumerate(answers[:4])}
         if not isinstance(answers, dict) or not answers:
             continue
         # CyberMetric is a strictly 4-option (A-D) MCQ and the prompt instructs

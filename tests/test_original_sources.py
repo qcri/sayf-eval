@@ -193,6 +193,21 @@ def test_cybermetric_skips_incomplete_options(monkeypatch):
     assert ds.load_cybermetric() == []
 
 
+def test_cybermetric_list_answers_null_option_skips_row(monkeypatch):
+    # answers given as a LIST with a null element: str(None) would become "None"
+    # and survive the A-D filter, rendering "B) None". The row must be skipped.
+    payload = json.dumps(
+        [
+            {"question": "Bad?", "answers": ["a", None, "c", "d"], "solution": "A"},
+            {"question": "Ok?", "answers": ["a", "b", "c", "d"], "solution": "B"},
+        ]
+    )
+    monkeypatch.setattr(ds, "_http_get", lambda url, **k: payload.encode())
+    s = ds.load_cybermetric()
+    assert [x.target for x in s] == ["B"]
+    assert "None" not in s[0].prompt
+
+
 def test_cybermetric_raises_on_non_list_questions(monkeypatch):
     payload = json.dumps({"questions": {"not": "a list"}})
     monkeypatch.setattr(ds, "_http_get", lambda url, **k: payload.encode())
