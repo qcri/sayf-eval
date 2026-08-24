@@ -46,8 +46,10 @@ def test_cti_ai4sec_mcq_skips_row_with_empty_question(monkeypatch):
     import datasets as hf
 
     rows = [
-        {"URL": "u0", "Question": "", "Option A": "a", "Option B": "b", "GT": "A"},  # no question -> skip
-        {"URL": "u1", "Question": "Real?", "Option A": "a", "Option B": "b", "GT": "B"},
+        {"URL": "u0", "Question": "", "Option A": "a", "Option B": "b",
+         "Option C": "c", "Option D": "d", "GT": "A"},  # no question -> skip
+        {"URL": "u1", "Question": "Real?", "Option A": "a", "Option B": "b",
+         "Option C": "c", "Option D": "d", "GT": "B"},
     ]
     monkeypatch.setattr(hf, "load_dataset", lambda *a, **k: rows)
     s = ds.make_cti_ai4sec_loader("AI4Sec/cti-bench", "cti-mcq", "mcq")()
@@ -62,11 +64,42 @@ def test_cti_ai4sec_mcq_skips_whitespace_only_options(monkeypatch):
     # None; the row must be skipped rather than crash _render_mcq.
     rows = [
         {"URL": "u0", "Question": "Q?", "Option A": "   ", "Option B": "\t", "GT": "A"},
-        {"URL": "u1", "Question": "Real?", "Option A": "a", "Option B": "b", "GT": "B"},
+        {
+            "URL": "u1",
+            "Question": "Real?",
+            "Option A": "a",
+            "Option B": "b",
+            "Option C": "c",
+            "Option D": "d",
+            "GT": "B",
+        },
     ]
     monkeypatch.setattr(hf, "load_dataset", lambda *a, **k: rows)
     s = ds.make_cti_ai4sec_loader("AI4Sec/cti-bench", "cti-mcq", "mcq")()
     assert [x.target for x in s] == ["B"]
+
+
+def test_cti_ai4sec_mcq_skips_partial_option_set(monkeypatch):
+    import datasets as hf
+
+    # CTI-Bench MCQ is a strict 4-option (A-D) question; a row missing an option
+    # (e.g. only A/B) would render choices inconsistent with the "A, B, C, D"
+    # instruction, so it must be skipped rather than rendered.
+    rows = [
+        {"URL": "u0", "Question": "Partial?", "Option A": "a", "Option B": "b", "GT": "A"},
+        {
+            "URL": "u1",
+            "Question": "Full?",
+            "Option A": "a",
+            "Option B": "b",
+            "Option C": "c",
+            "Option D": "d",
+            "GT": "C",
+        },
+    ]
+    monkeypatch.setattr(hf, "load_dataset", lambda *a, **k: rows)
+    s = ds.make_cti_ai4sec_loader("AI4Sec/cti-bench", "cti-mcq", "mcq")()
+    assert [x.target for x in s] == ["C"]  # partial A/B row dropped, full A-D kept
 
 
 def test_cti_ai4sec_mcq_restricts_to_ad_and_none_safe_gold(monkeypatch):

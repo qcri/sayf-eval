@@ -160,9 +160,13 @@ def make_cti_ai4sec_loader(dataset_name: str, subset: str, task_type: str) -> Ca
                     for L in ("A", "B", "C", "D")
                     if str(row.get(f"Option {L}") or "").strip()
                 }
-                choices = _choices_to_list(opts)
-                if not question or not choices:  # malformed MCQ row -> skip
+                # CTI-Bench MCQ is a strict 4-option (A-D) question whose
+                # instruction names all four; require every option present and
+                # non-blank so the rendered choices can't disagree with the
+                # prompt (a partial A/B row would). Skip malformed rows.
+                if not question or len(opts) != 4:
                     continue
+                choices = _choices_to_list(opts)
                 prompt = _render_mcq(_MCQ_INSTRUCTION, question, choices)
             else:  # RCM / VSP / ATE: prebuilt Prompt column
                 choices = None
