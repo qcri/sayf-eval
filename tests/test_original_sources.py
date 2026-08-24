@@ -230,3 +230,18 @@ def test_cti_taa_raises_on_length_mismatch(monkeypatch):
     monkeypatch.setattr(ds, "_http_get", fake)
     with pytest.raises(ValueError):
         ds.load_cti_taa()
+
+
+def test_cti_taa_raises_on_null_gold_cell(monkeypatch):
+    # A short gold row leaves the trailing GT column as None (DictReader restval),
+    # which must fail fast rather than stringify to "None" and slip past the
+    # emptiness check (the exact bypass the None-safe coercion closes).
+    data = "URL\tText\tPrompt\nu1\tt1\tP1\nu2\tt2\tP2\n"
+    gold = "ChatGPT\tGT\nX\tSideCopy\nY\n"  # row 2 has no GT field -> None
+
+    def fake(url, **k):
+        return (data if url.endswith("data/cti-taa.tsv") else gold).encode()
+
+    monkeypatch.setattr(ds, "_http_get", fake)
+    with pytest.raises(ValueError):
+        ds.load_cti_taa()

@@ -325,7 +325,10 @@ def load_cti_taa() -> list[Sample]:
             delimiter="\t",
         )
     )
-    gts = [str(r.get("GT", "")).strip() for r in gold_rows]
+    # None-safe: a present-but-null GT cell (e.g. a short row where DictReader
+    # fills the missing column with None) would stringify to "None" and slip past
+    # the emptiness check below, silently corrupting the gold. Coerce None -> "".
+    gts = [str(r.get("GT") or "").strip() for r in gold_rows]
     # Fail fast on misalignment OR a missing/blank gold column: a silent
     # empty-gold fallback would reintroduce the exact "graded against no gold"
     # failure this loader exists to fix.
@@ -423,7 +426,7 @@ def load_cybermetric() -> list[Sample]:
     for idx, row in enumerate(rows):
         question = row.get("question", "")
         answers = row.get("answers", {}) or row.get("choices", {}) or row.get("options", {}) or {}
-        gt = str(row.get("solution", "")).strip()
+        gt = str(row.get("solution") or "").strip()  # None-safe: null -> "" not "None"
         if not question:
             continue
         if isinstance(answers, list):
@@ -435,7 +438,10 @@ def load_cybermetric() -> list[Sample]:
         # the rendered prompt and ``choices`` are always internally consistent;
         # skip any malformed row (missing/blank option, stray E+, or non A-D
         # schema) rather than render a prompt whose letters don't match.
-        answers = {k: answers[k] for k in ("A", "B", "C", "D") if k in answers and str(answers[k]).strip()}
+        # None-safe: a null option value stringifies to "None" (truthy), so guard
+        # with ``or ""`` — a blank/null option is treated as absent and drops the
+        # row via the len(...)!=4 check rather than rendering "A) None".
+        answers = {k: answers[k] for k in ("A", "B", "C", "D") if k in answers and str(answers[k] or "").strip()}
         if len(answers) != 4:
             continue
         options = ", ".join(f"{k}) {v}" for k, v in answers.items())
