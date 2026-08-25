@@ -1,0 +1,68 @@
+{
+  "schema_version": "1.1",
+  "created_at": "2026-08-24T12:00:00+00:00",
+  "judge": "gpt-5.4",
+  "description": "sayf-eval leaderboard: 10 models x 24 cybersecurity sub-tasks, judged by GPT-5.4 under the unified extract-and-verdict prompt. Aggregated from the original evaluation harness runs (default + restored validation-split items) mapped to the sayf-eval schema.",
+  "models": [
+    {
+      "model": "claude-sonnet-4-6",
+      "avg_accuracy_pct": 76.0,
+      "n_tasks": 24,
+      "record": "results/claude-sonnet-4-6/results_2026-08-24T12-00-00+00-00.json"
+    },
+    {
+      "model": "gpt-5.4",
+      "avg_accuracy_pct": 73.4,
+      "n_tasks": 24,
+      "record": "results/gpt-5.4/results_2026-08-24T12-00-00+00-00.json"
+    },
+    {
+      "model": "gemma-4-31B-it",
+      "avg_accuracy_pct": 69.5,
+      "n_tasks": 24,
+      "record": "results/gemma-4-31B-it/results_2026-08-24T12-00-00+00-00.json"
+    },
+    {
+      "model": "Qwen/Qwen3.6-35B-A3B",
+      "avg_accuracy_pct": 65.0,
+      "n_tasks": 24,
+      "record": "results/Qwen__Qwen3.6-35B-A3B/results_2026-08-24T12-00-00+00-00.json"
+    },
+    {
+      "model": "Llama-Primus-Nemotron-70B-Instruct",
+      "avg_accuracy_pct": 64.7,
+      "n_tasks": 24,
+      "record": "results/Llama-Primus-Nemotron-70B-Instruct/results_2026-08-24T12-00-00+00-00.json"
+    },
+    {
+      "model": "RISys-Lab/RedSage-Qwen3-8B-DPO",
+      "avg_accuracy_pct": 64.1,
+      "n_tasks": 24,
+      "record": "results/RISys-Lab__RedSage-Qwen3-8B-DPO/results_2026-08-24T12-00-00+00-00.json"
+    },
+    {
+      "model": "Llama-3.3-70B-Instruct",
+      "avg_accuracy_pct": 62.8,
+      "n_tasks": 24,
+      "record": "results/Llama-3.3-70B-Instruct/results_2026-08-24T12-00-00+00-00.json"
+    },
+    {
+      "model": "openai/gpt-oss-20b",
+      "avg_accuracy_pct": 61.9,
+      "n_tasks": 24,
+      "record": "results/openai__gpt-oss-20b/results_2026-08-24T12-00-00+00-00.json"
+    },
+    {
+      "model": "fdtn-ai/Foundation-Sec-8B-Instruct",
+      "avg_accuracy_pct": 57.4,
+      "n_tasks": 24,
+      "record": "results/fdtn-ai__Foundation-Sec-8B-Instruct/results_2026-08-24T12-00-00+00-00.json"
+    },
+    {
+      "model": "trendmicro-ailab/Llama-Primus-Merged",
+      "avg_accuracy_pct": 54.7,
+      "n_tasks": 24,
+      "record": "results/trendmicro-ailab__Llama-Primus-Merged/results_2026-08-24T12-00-00+00-00.json"
+    }
+  ]
+}

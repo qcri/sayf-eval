@@ -167,17 +167,16 @@ For reasoning models, pass `--answer-stop` to apply a stop sequence to the answe
 
 ## Tasks
 
-25 cybersecurity sub-tasks across 9 benchmark families (`sayf-eval run --tasks …`):
+24 cybersecurity sub-tasks across 9 benchmark families (`sayf-eval run --tasks …`):
 
 - **CTI-Bench:** `mcq`, `rcm`, `vsp`, `ate`, `cti_taa`
 - **AthenaBench:** `ckt`, `rms`, `taa`, `athena_ate`, `athena_rcm`, `athena_vsp`
 - **SECURE:** `secure_maet`, `secure_cwet`, `secure_kcv`
 - **RedSage:** `redsage_frameworks`, `redsage_generals`, `redsage_skills`, `redsage_cli`, `redsage_kali`
-- **Other MCQ:** `seceval`, `cybermetric`, `secbench`, `mmlu-cs`, `cissp`
+- **Other MCQ:** `seceval`, `cybermetric`, `secbench`, `mmlu-cs`
 - **SEvenLLM:** `sevenllm` (open-ended structured CTI extraction / analysis, judged semantically)
 
-`cissp` needs a dataset path via `SAYF_EVAL_CISSP_PATH` (not a public dataset);
-all others load from HuggingFace / GitHub on first run.
+All tasks load from HuggingFace / GitHub on first run.
 
 ## Standardized pipeline choices
 
@@ -188,7 +187,37 @@ to the answer only; and **denominator = all attempted items** (unparseable/empty
 answers are incorrect; only judge-API failures are excluded — from both
 numerator and denominator).
 
-## Results & leaderboard
+## Leaderboard
+
+Ten cybersecurity LLMs across **24 sub-tasks** (9 benchmark families), each cell
+scored by a single `gpt-5.4` judge under the unified extract-and-verdict prompt
+(temperature 0, top_p 1, seed 42). Ranked by mean strict-verdict accuracy:
+
+| Rank | Model | Avg accuracy (%) |
+|---:|---|---:|
+| 1 | `claude-sonnet-4-6` | 76.0 |
+| 2 | `gpt-5.4` | 73.4 |
+| 3 | `gemma-4-31B-it` | 69.5 |
+| 4 | `Qwen/Qwen3.6-35B-A3B` | 65.0 |
+| 5 | `Llama-Primus-Nemotron-70B-Instruct` | 64.7 |
+| 6 | `RISys-Lab/RedSage-Qwen3-8B-DPO` | 64.1 |
+| 7 | `Llama-3.3-70B-Instruct` | 62.8 |
+| 8 | `openai/gpt-oss-20b` | 61.9 |
+| 9 | `fdtn-ai/Foundation-Sec-8B-Instruct` | 57.4 |
+| 10 | `trendmicro-ailab/Llama-Primus-Merged` | 54.7 |
+
+**→ Full per-task table + provenance: [`leaderboard/`](leaderboard/README.md).**
+Each model is one standard results record (schema 1.1, aggregate-only) under
+[`leaderboard/results/`](leaderboard/results/). The snapshot ships with the repo,
+not the PyPI package, so from a clone you can browse the records or regenerate the
+table with `python leaderboard/render_table.py leaderboard`.
+
+The records follow the standard sayf-eval schema, which maps onto Every Eval
+Ever's (EEE) `EvaluationLog` schema (one log per task) for HF Community-Evals; a
+sayf-eval converter for EEE lives in the
+[every_eval_ever](https://github.com/evaleval/every_eval_ever) project.
+
+## Results records
 
 Every `sayf-eval run` writes a canonical **results record** to
 `<output-dir>/results/<model>/results_<ts>.json`. Because scores are
@@ -215,30 +244,6 @@ sayf-eval run --tasks mcq vsp --model openai/gpt-4o --judge openai/gpt-4o \
 Nothing is pushed without an explicit flag. The scores artifact never contains
 prompt or answer text, so it is safe to make public; details stay private
 regardless of `--public`.
-
-### Community leaderboard (HF Community-Evals)
-
-Level 2 emits the two artifacts HuggingFace aggregates into a rendered
-leaderboard ([docs](https://huggingface.co/docs/hub/eval-results)) — opt-in, and
-a deliberate disclosure decision for security tasks.
-
-```bash
-# 1. Benchmark spec: register sayf-eval as a HF benchmark dataset (one
-#    sub-leaderboard per task). Writes eval.yaml; --push-to creates the dataset.
-sayf-eval benchmark-spec --out eval.yaml            # all 25 tasks
-sayf-eval benchmark-spec --push-to qcri/sayf-eval --public   # private without --public
-
-# 2. Per-model results: turn a results record into .eval_results/*.yaml and
-#    (optionally) open a community PR to the model repo so scores show on its card.
-sayf-eval eval-results --results outputs/gpt4o/results/openai__gpt-4o/results_*.json \
-  --benchmark-id qcri/sayf-eval --out .eval_results/sayf-eval.yaml \
-  --submit-pr openai/gpt-4o
-```
-
-Each `.eval_results` entry carries the pipeline config in its `notes`, so the
-public leaderboard never shows a bare number. Two one-time HF steps are required
-to go live (both noted by the CLI): the `sayf-eval` `evaluation_framework` must be
-added to HF's enum, and the benchmark dataset allow-listed (registration is beta).
 
 ## Development
 
