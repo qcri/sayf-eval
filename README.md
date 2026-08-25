@@ -208,8 +208,9 @@ scored by a single `gpt-5.4` judge under the unified extract-and-verdict prompt
 
 **→ Full per-task table + provenance: [`leaderboard/`](leaderboard/README.md).**
 Each model is one standard results record (schema 1.1, aggregate-only) under
-[`leaderboard/results/`](leaderboard/results/); regenerate the table with
-`python leaderboard/render_table.py leaderboard`.
+[`leaderboard/results/`](leaderboard/results/). The snapshot ships with the repo,
+not the PyPI package, so from a clone you can browse the records or regenerate the
+table with `python leaderboard/render_table.py leaderboard`.
 
 The records follow the standard sayf-eval schema, which maps onto Every Eval
 Ever's (EEE) `EvaluationLog` schema (one log per task) for HF Community-Evals; a
