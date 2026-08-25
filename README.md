@@ -211,6 +211,11 @@ Each model is one standard results record (schema 1.1, aggregate-only) under
 [`leaderboard/results/`](leaderboard/results/); regenerate the table with
 `python leaderboard/render_table.py leaderboard`.
 
+The records follow the standard sayf-eval schema, which maps onto Every Eval
+Ever's (EEE) `EvaluationLog` schema (one log per task) for HF Community-Evals; a
+sayf-eval converter for EEE lives in the
+[every_eval_ever](https://github.com/evaleval/every_eval_ever) project.
+
 ## Results records
 
 Every `sayf-eval run` writes a canonical **results record** to

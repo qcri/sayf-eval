@@ -20,6 +20,11 @@ prompt templates, and **no per-sample question/answer/response text** (aggregate
 only, per the project's dual-use posture). [`leaderboard.json`](leaderboard.json)
 is the ranked index over those records.
 
+These records map onto Every Eval Ever's (EEE) `EvaluationLog` schema (one log
+per task), so the leaderboard is portable to HF Community-Evals; a sayf-eval
+converter for EEE lives in the
+[every_eval_ever](https://github.com/evaleval/every_eval_ever) project.
+
 ## Regenerate this table
 
 The table is rendered from the committed records only (no private data needed):

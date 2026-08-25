@@ -1,4 +1,4 @@
-"""Command-line entrypoint: ``sayf-eval {run-inference,run-judge,run,benchmark-spec,eval-results}``.
+"""Command-line entrypoint: ``sayf-eval {run-inference,run-judge,run}``.
 
 The run subcommands build the model-under-test and/or judge as the *same*
 :class:`~sayf_eval.model.Model` type — local vLLM is reached by passing
@@ -164,46 +164,6 @@ def _export_results(args, summary: dict, tasks) -> None:
         print(f"details → private dataset {repo}")
 
 
-def _cmd_benchmark_spec(args) -> int:
-    from sayf_eval.leaderboard import build_eval_yaml, push_benchmark
-    from sayf_eval.registry import available_tasks
-
-    task_ids = args.tasks or available_tasks()
-    if not task_ids:
-        sys.exit("No tasks registered.")
-    yaml_str = build_eval_yaml(args.name, args.description, task_ids)
-    os.makedirs(os.path.dirname(os.path.abspath(args.out)), exist_ok=True)
-    with open(args.out, "w", encoding="utf-8") as f:
-        f.write(yaml_str)
-    print(f"benchmark eval.yaml → {args.out} ({len(task_ids)} tasks)")
-    if args.push_to:
-        repo = push_benchmark(args.push_to, yaml_str, public=args.public, token=args.token)
-        print(f"benchmark → {'public' if args.public else 'private'} dataset {repo}")
-    return 0
-
-
-def _cmd_eval_results(args) -> int:
-    from sayf_eval.leaderboard import build_eval_results, submit_results_pr
-
-    with open(args.results, encoding="utf-8") as f:
-        record = json.load(f)
-    yaml_str = build_eval_results(
-        record,
-        args.benchmark_id,
-        task_ids=args.tasks,
-        as_percentage=not args.no_percentage,
-    )
-    out_dir = os.path.dirname(os.path.abspath(args.out))
-    os.makedirs(out_dir, exist_ok=True)
-    with open(args.out, "w", encoding="utf-8") as f:
-        f.write(yaml_str)
-    print(f".eval_results → {args.out}")
-    if args.submit_pr:
-        url = submit_results_pr(args.submit_pr, yaml_str, token=args.token)
-        print(f"community results PR → {url}")
-    return 0
-
-
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="sayf-eval")
     sub = parser.add_subparsers(dest="cmd", required=True)
@@ -222,46 +182,8 @@ def main(argv: list[str] | None = None) -> int:
     _add_judge_args(p_run)
     _add_push_args(p_run)
 
-    # Leaderboard (Level 2 — HF Community-Evals). Opt-in; publishes scores.
-    p_spec = sub.add_parser(
-        "benchmark-spec", help="Emit the benchmark dataset eval.yaml (register sayf-eval as a HF benchmark)."
-    )
-    p_spec.add_argument("--name", default="Sayf-Eval — Cybersecurity LLM Evaluation")
-    p_spec.add_argument(
-        "--description",
-        default="Model-agnostic cybersecurity LLM benchmark suite (CTI, vuln scoring, ICS/OT, tool proficiency, open-ended CTI extraction).",
-    )
-    p_spec.add_argument("--tasks", nargs="*", default=None, help="Task subset (default: all registered).")
-    p_spec.add_argument("--out", default="eval.yaml")
-    p_spec.add_argument("--push-to", default=None, help="Hub dataset id to create/update (e.g. qcri/sayf-eval).")
-    p_spec.add_argument(
-        "--public", action="store_true", help="Make the benchmark dataset public (deliberate disclosure)."
-    )
-    p_spec.add_argument("--token", default=None)
-
-    p_er = sub.add_parser(
-        "eval-results",
-        help="Emit per-model .eval_results YAML from a results record (optionally PR it to a model repo).",
-    )
-    p_er.add_argument("--results", required=True, help="Path to a results record JSON (from a run).")
-    p_er.add_argument(
-        "--benchmark-id", required=True, help="Hub id of the registered benchmark dataset (e.g. qcri/sayf-eval)."
-    )
-    p_er.add_argument("--tasks", nargs="*", default=None)
-    p_er.add_argument("--out", default=".eval_results/sayf-eval.yaml")
-    p_er.add_argument(
-        "--no-percentage", action="store_true", help="Emit accuracy as a 0–1 fraction instead of a percentage."
-    )
-    p_er.add_argument("--submit-pr", default=None, help="Model repo to open a community results PR against.")
-    p_er.add_argument("--token", default=None)
-
     args = parser.parse_args(argv)
     _import_tasks()
-
-    if args.cmd == "benchmark-spec":
-        return _cmd_benchmark_spec(args)
-    if args.cmd == "eval-results":
-        return _cmd_eval_results(args)
 
     tasks = _resolve_tasks(args.tasks)
     cfg = RunConfig(

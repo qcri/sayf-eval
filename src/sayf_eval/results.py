@@ -1,4 +1,4 @@
-"""Results record + optional Hub export (the "leaderboard" Level 1).
+"""Results record + optional Hub export.
 
 A sayf-eval result is only meaningful alongside the pipeline that produced it
 (the project's thesis: benchmark scores are pipeline-dependent). So the canonical
