@@ -49,10 +49,10 @@ class Task:
             tasks can share one scoring family.
         source: Declared dataset provenance for this task, as a neutral dict that
             downstream exporters map onto their own schema (e.g. the Every Eval
-            Ever ``source_data`` variants). One of three shapes — HuggingFace
-            ``{"type": "hf_dataset", "dataset_name", "hf_repo", "subset"?, "split"?}``,
-            URL ``{"type": "url", "dataset_name", "url": [...]}``, or private
-            ``{"type": "other", "dataset_name"}``. ``None`` when undeclared.
+            Ever ``source_data`` variants). One of two shapes: HuggingFace
+            ``{"type": "hf_dataset", "dataset_name", "hf_repo", "subset"?, "split"?}``
+            or URL ``{"type": "url", "dataset_name", "url": [...]}``. ``None`` when
+            undeclared.
     """
 
     name: str
