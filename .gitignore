@@ -19,6 +19,9 @@ env/
 outputs/
 results/
 *.jsonl.tmp
+# ...but the committed leaderboard snapshot is intentional, not a run output
+!leaderboard/results/
+!leaderboard/results/**
 
 # Tooling
 .pytest_cache/

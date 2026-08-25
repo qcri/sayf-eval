@@ -1,0 +1,411 @@
+{
+  "model": {
+    "name": "gemma-4-31B-it",
+    "provider": null,
+    "base_url": null
+  },
+  "judge": {
+    "name": "gpt-5.4",
+    "provider": null,
+    "base_url": null
+  },
+  "pipeline": {
+    "temperature": 0.0,
+    "top_p": 1.0,
+    "seed": 42,
+    "max_tokens": "per-task-calibrated",
+    "max_tokens_override": null,
+    "answer_stop": null,
+    "think_handling": "strip <think>...</think> before judging, then apply stop sequence to the answer only",
+    "scoring": "llm-as-judge: single call performs extraction + CORRECT/INCORRECT verdict",
+    "denominator_policy": "accuracy = correct / total over all attempted items; unparseable/empty answers count as incorrect; only judge-API failures are excluded (skipped) from both numerator and denominator"
+  },
+  "results": {
+    "ate": {
+      "accuracy": 0.083333,
+      "correct": 5,
+      "total": 60,
+      "skipped": 0,
+      "precision": 0.7399,
+      "recall": 0.738,
+      "f1": 0.739,
+      "exact_matches": 5,
+      "tp_total": 293,
+      "fp_total": 103,
+      "fn_total": 104
+    },
+    "rcm": {
+      "accuracy": 0.705,
+      "correct": 705,
+      "total": 1000,
+      "skipped": 0
+    },
+    "vsp": {
+      "accuracy": 0.486,
+      "correct": 486,
+      "total": 1000,
+      "skipped": 0,
+      "mad": 0.9343,
+      "extraction_success": 995
+    },
+    "ckt": {
+      "accuracy": 0.861333,
+      "correct": 2584,
+      "total": 3000,
+      "skipped": 0
+    },
+    "rms": {
+      "accuracy": 0.048,
+      "correct": 24,
+      "total": 500,
+      "skipped": 0,
+      "f1": 0.215457
+    },
+    "taa": {
+      "accuracy": 0.22,
+      "correct": 22,
+      "total": 100,
+      "skipped": 0
+    },
+    "cti_taa": {
+      "accuracy": 0.5,
+      "correct": 25,
+      "total": 50,
+      "skipped": 0
+    },
+    "mcq": {
+      "accuracy": 0.7444,
+      "correct": 1861,
+      "total": 2500,
+      "skipped": 0
+    },
+    "athena_ate": {
+      "accuracy": 0.494,
+      "correct": 247,
+      "total": 500,
+      "skipped": 0,
+      "precision": 0.495,
+      "recall": 0.494,
+      "f1": 0.4945,
+      "exact_matches": 247,
+      "tp_total": 247,
+      "fp_total": 252,
+      "fn_total": 253
+    },
+    "athena_rcm": {
+      "accuracy": 0.648,
+      "correct": 1296,
+      "total": 2000,
+      "skipped": 0
+    },
+    "athena_vsp": {
+      "accuracy": 0.4685,
+      "correct": 937,
+      "total": 2000,
+      "skipped": 0,
+      "mad": 0.9406,
+      "extraction_success": 2000,
+      "mad_norm": 0.877844
+    },
+    "secure_maet": {
+      "accuracy": 0.922575,
+      "correct": 989,
+      "total": 1072,
+      "skipped": 0
+    },
+    "secure_cwet": {
+      "accuracy": 0.923237,
+      "correct": 890,
+      "total": 964,
+      "skipped": 0
+    },
+    "secure_kcv": {
+      "accuracy": 0.847639,
+      "correct": 395,
+      "total": 466,
+      "skipped": 0
+    },
+    "redsage_frameworks": {
+      "accuracy": 0.8624,
+      "correct": 4312,
+      "total": 5000,
+      "skipped": 0
+    },
+    "redsage_generals": {
+      "accuracy": 0.8708,
+      "correct": 4354,
+      "total": 5000,
+      "skipped": 0
+    },
+    "redsage_skills": {
+      "accuracy": 0.9136,
+      "correct": 9136,
+      "total": 10000,
+      "skipped": 0
+    },
+    "redsage_cli": {
+      "accuracy": 0.888,
+      "correct": 4440,
+      "total": 5000,
+      "skipped": 0
+    },
+    "redsage_kali": {
+      "accuracy": 0.8116,
+      "correct": 4058,
+      "total": 5000,
+      "skipped": 0
+    },
+    "cybermetric": {
+      "accuracy": 0.952,
+      "correct": 476,
+      "total": 500,
+      "skipped": 0
+    },
+    "mmlu-cs": {
+      "accuracy": 0.9,
+      "correct": 90,
+      "total": 100,
+      "skipped": 0
+    },
+    "secbench": {
+      "accuracy": 0.866564,
+      "correct": 565,
+      "total": 652,
+      "skipped": 0
+    },
+    "seceval": {
+      "accuracy": 0.782549,
+      "correct": 1713,
+      "total": 2189,
+      "skipped": 0
+    },
+    "sevenllm": {
+      "accuracy": 0.869231,
+      "correct": 565,
+      "total": 650,
+      "skipped": 0
+    }
+  },
+  "tasks": [
+    "ate",
+    "athena_ate",
+    "athena_rcm",
+    "athena_vsp",
+    "ckt",
+    "cti_taa",
+    "cybermetric",
+    "mcq",
+    "mmlu-cs",
+    "rcm",
+    "redsage_cli",
+    "redsage_frameworks",
+    "redsage_generals",
+    "redsage_kali",
+    "redsage_skills",
+    "rms",
+    "secbench",
+    "seceval",
+    "secure_cwet",
+    "secure_kcv",
+    "secure_maet",
+    "sevenllm",
+    "taa",
+    "vsp"
+  ],
+  "task_sources": {
+    "ate": {
+      "type": "hf_dataset",
+      "dataset_name": "CTI-Bench ATE (ATT&CK)",
+      "hf_repo": "AI4Sec/cti-bench",
+      "subset": "cti-ate",
+      "split": "test"
+    },
+    "rcm": {
+      "type": "hf_dataset",
+      "dataset_name": "CTI-Bench RCM (CWE mapping)",
+      "hf_repo": "AI4Sec/cti-bench",
+      "subset": "cti-rcm",
+      "split": "test"
+    },
+    "vsp": {
+      "type": "hf_dataset",
+      "dataset_name": "CTI-Bench VSP (CVSS)",
+      "hf_repo": "AI4Sec/cti-bench",
+      "subset": "cti-vsp",
+      "split": "test"
+    },
+    "ckt": {
+      "type": "url",
+      "dataset_name": "AthenaBench CKT",
+      "url": [
+        "https://github.com/Athena-Software-Group/athenabench/raw/main/benchmark/athena-cti-ckt-3k.jsonl"
+      ]
+    },
+    "rms": {
+      "type": "url",
+      "dataset_name": "AthenaBench RMS",
+      "url": [
+        "https://github.com/Athena-Software-Group/athenabench/raw/main/benchmark/athena-cti-rms.jsonl"
+      ]
+    },
+    "taa": {
+      "type": "url",
+      "dataset_name": "AthenaBench TAA",
+      "url": [
+        "https://github.com/Athena-Software-Group/athenabench/raw/main/benchmark/athena-cti-taa.jsonl"
+      ]
+    },
+    "cti_taa": {
+      "type": "url",
+      "dataset_name": "CTI-Bench TAA",
+      "url": [
+        "https://github.com/xashru/cti-bench"
+      ]
+    },
+    "mcq": {
+      "type": "hf_dataset",
+      "dataset_name": "CTI-Bench MCQ",
+      "hf_repo": "AI4Sec/cti-bench",
+      "subset": "cti-mcq",
+      "split": "test"
+    },
+    "athena_ate": {
+      "type": "url",
+      "dataset_name": "AthenaBench ATE",
+      "url": [
+        "https://github.com/Athena-Software-Group/athenabench/raw/main/benchmark/athena-cti-ate.jsonl"
+      ]
+    },
+    "athena_rcm": {
+      "type": "url",
+      "dataset_name": "AthenaBench RCM",
+      "url": [
+        "https://github.com/Athena-Software-Group/athenabench/raw/main/benchmark/athena-cti-rcm.jsonl"
+      ]
+    },
+    "athena_vsp": {
+      "type": "url",
+      "dataset_name": "AthenaBench VSP",
+      "url": [
+        "https://github.com/Athena-Software-Group/athenabench/raw/main/benchmark/athena-cti-vsp.jsonl"
+      ]
+    },
+    "secure_maet": {
+      "type": "url",
+      "dataset_name": "SECURE MAET",
+      "url": [
+        "https://github.com/aiforsec/SECURE"
+      ]
+    },
+    "secure_cwet": {
+      "type": "hf_dataset",
+      "dataset_name": "SECURE CWET",
+      "hf_repo": "RISys-Lab/Benchmarks_CyberSec_SECURE",
+      "subset": "CWET",
+      "split": "test"
+    },
+    "secure_kcv": {
+      "type": "url",
+      "dataset_name": "SECURE KCV",
+      "url": [
+        "https://github.com/aiforsec/SECURE"
+      ]
+    },
+    "redsage_frameworks": {
+      "type": "hf_dataset",
+      "dataset_name": "RedSage: cybersecurity_knowledge_frameworks",
+      "hf_repo": "RISys-Lab/Benchmarks_CyberSec_RedSageMCQ",
+      "subset": "cybersecurity_knowledge_frameworks",
+      "split": "test"
+    },
+    "redsage_generals": {
+      "type": "hf_dataset",
+      "dataset_name": "RedSage: cybersecurity_knowledge_generals",
+      "hf_repo": "RISys-Lab/Benchmarks_CyberSec_RedSageMCQ",
+      "subset": "cybersecurity_knowledge_generals",
+      "split": "test"
+    },
+    "redsage_skills": {
+      "type": "hf_dataset",
+      "dataset_name": "RedSage: cybersecurity_skills",
+      "hf_repo": "RISys-Lab/Benchmarks_CyberSec_RedSageMCQ",
+      "subset": "cybersecurity_skills",
+      "split": "test"
+    },
+    "redsage_cli": {
+      "type": "hf_dataset",
+      "dataset_name": "RedSage: cybersecurity_tools_cli",
+      "hf_repo": "RISys-Lab/Benchmarks_CyberSec_RedSageMCQ",
+      "subset": "cybersecurity_tools_cli",
+      "split": "test"
+    },
+    "redsage_kali": {
+      "type": "hf_dataset",
+      "dataset_name": "RedSage: cybersecurity_tools_kali",
+      "hf_repo": "RISys-Lab/Benchmarks_CyberSec_RedSageMCQ",
+      "subset": "cybersecurity_tools_kali",
+      "split": "test"
+    },
+    "cybermetric": {
+      "type": "url",
+      "dataset_name": "CyberMetric-500",
+      "url": [
+        "https://github.com/cybermetric/CyberMetric"
+      ]
+    },
+    "mmlu-cs": {
+      "type": "hf_dataset",
+      "dataset_name": "MMLU computer_security (5-shot)",
+      "hf_repo": "lighteval/mmlu",
+      "subset": "computer_security",
+      "split": "test"
+    },
+    "secbench": {
+      "type": "hf_dataset",
+      "dataset_name": "SecBench MCQ (English)",
+      "hf_repo": "RISys-Lab/Benchmarks_CyberSec_SecBench",
+      "subset": "MCQs_English",
+      "split": "test"
+    },
+    "seceval": {
+      "type": "hf_dataset",
+      "dataset_name": "SecEval",
+      "hf_repo": "XuanwuAI/SecEval"
+    },
+    "sevenllm": {
+      "type": "hf_dataset",
+      "dataset_name": "SEvenLLM-Bench (English)",
+      "hf_repo": "Multilingual-Multimodal-NLP/SEVENLLM-Dataset",
+      "split": "test"
+    }
+  },
+  "judge_prompt_templates": {
+    "ate": "You are a strict evaluator for a cybersecurity benchmark. Your role has TWO steps.\n\nQuestion:\n{question}\n\nCorrect Answer: {ground_truth}\n\nModel's Response:\n{model_answer}\n\nSTEP 1 — EXTRACT the model's answer.\n- Look for the model's explicit final answer (e.g., \"Answer:\", \"Final answer:\", concluding line, single bolded line at top).\n- IGNORE letters/IDs/text that appear only inside explanations of other options or thinking-aloud prose.\n- If the model gives multiple inconsistent answers, use its most prominent/final selection.\n- DO NOT correct, infer, or improve the model's answer — extract verbatim what it actually said.\n- Format the extracted answer as: comma-separated sorted PARENT MITRE ATT&CK technique IDs, e.g. \"T1027,T1059\". IMPORTANT: strip any subtechnique suffix — \"T1059.001\" must become \"T1059\". Output ONLY parent IDs (uppercase T followed by 4 digits, no dot). If no valid technique was given, output \"NONE\".\n\nSTEP 2 — VERDICT.\nVerdict is CORRECT only if the extracted set of PARENT technique IDs equals the correct set of parent IDs exactly. Always strip subtechnique suffixes from BOTH extracted and ground truth before comparing (\"T1059.001\" → \"T1059\"). Partial/missing/extra parent IDs are INCORRECT.\n\nOutput ONLY this JSON, nothing else:\n{\n  \"extracted_answer\": \"<your extraction in the format above>\",\n  \"verdict\": \"CORRECT\" or \"INCORRECT\",\n  \"justification\": \"<one short sentence explaining what you extracted and why the verdict>\"\n}\n\nYour judgment:",
+    "rcm": "You are a strict evaluator for a cybersecurity benchmark. Your role has TWO steps.\n\nQuestion:\n{question}\n\nCorrect Answer: {ground_truth}\n\nModel's Response:\n{model_answer}\n\nSTEP 1 — EXTRACT the model's answer.\n- Look for the model's explicit final answer (e.g., \"Answer:\", \"Final answer:\", concluding line, single bolded line at top).\n- IGNORE letters/IDs/text that appear only inside explanations of other options or thinking-aloud prose.\n- If the model gives multiple inconsistent answers, use its most prominent/final selection.\n- DO NOT correct, infer, or improve the model's answer — extract verbatim what it actually said.\n- Format the extracted answer as: comma-separated sorted CWE IDs in canonical form \"CWE-NNN\", e.g. \"CWE-79\" or \"CWE-79,CWE-89\". If no valid CWE was given, output \"NONE\".\n\nSTEP 2 — VERDICT.\nVerdict is CORRECT only if the extracted CWE-ID set equals the correct CWE-ID set exactly (treat \"CWE-79\", \"cwe-79\", \"79\" as equivalent — same numeric ID). Partial/missing/extra IDs are INCORRECT.\n\nOutput ONLY this JSON, nothing else:\n{\n  \"extracted_answer\": \"<your extraction in the format above>\",\n  \"verdict\": \"CORRECT\" or \"INCORRECT\",\n  \"justification\": \"<one short sentence explaining what you extracted and why the verdict>\"\n}\n\nYour judgment:",
+    "vsp": "You are a strict evaluator for a cybersecurity benchmark. Your role has TWO steps.\n\nQuestion:\n{question}\n\nCorrect Answer: {ground_truth}\n\nModel's Response:\n{model_answer}\n\nSTEP 1 — EXTRACT the model's answer.\n- Look for the model's explicit final answer (e.g., \"Answer:\", \"Final answer:\", concluding line, single bolded line at top).\n- IGNORE letters/IDs/text that appear only inside explanations of other options or thinking-aloud prose.\n- If the model gives multiple inconsistent answers, use its most prominent/final selection.\n- DO NOT correct, infer, or improve the model's answer — extract verbatim what it actually said.\n- Format the extracted answer as: a CVSS v3.1 vector string starting with \"CVSS:3.1/\", e.g. \"CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H\". If the model started with \"CVSS:3.0/\" change it to \"CVSS:3.1/\". If no vector prefix is present, prepend \"CVSS:3.1/\". If no valid CVSS vector is found, output \"NONE\".\n\nSTEP 2 — VERDICT.\nVerdict is CORRECT if the extracted vector equals the correct vector after case-insensitive normalization and prefix normalization (CVSS:3.0/ ≡ CVSS:3.1/). Otherwise INCORRECT.\n\nOutput ONLY this JSON, nothing else:\n{\n  \"extracted_answer\": \"<your extraction in the format above>\",\n  \"verdict\": \"CORRECT\" or \"INCORRECT\",\n  \"justification\": \"<one short sentence explaining what you extracted and why the verdict>\"\n}\n\nYour judgment:",
+    "ckt": "You are a strict evaluator for a cybersecurity benchmark. Your role has TWO steps.\n\nQuestion:\n{question}\n\nAnswer Choices:\n{choices}\n\nCorrect Answer: {ground_truth}\n\nModel's Response:\n{model_answer}\n\nSTEP 1 — EXTRACT the model's answer.\n- Look for the model's explicit final answer (e.g., \"Answer:\", \"Final answer:\", concluding line, single bolded line at top).\n- IGNORE letters/IDs/text that appear only inside explanations of other options or thinking-aloud prose.\n- If the model gives multiple inconsistent answers, use its most prominent/final selection.\n- DO NOT correct, infer, or improve the model's answer — extract verbatim what it actually said.\n- Format the extracted answer as: a single uppercase letter (A, B, C, D, or E)\n\nSTEP 2 — VERDICT.\nVerdict is CORRECT if the extracted letter equals the correct answer (case-insensitive). Otherwise INCORRECT.\n\nOutput ONLY this JSON, nothing else:\n{\n  \"extracted_answer\": \"<your extraction in the format above>\",\n  \"verdict\": \"CORRECT\" or \"INCORRECT\",\n  \"justification\": \"<one short sentence explaining what you extracted and why the verdict>\"\n}\n\nYour judgment:",
+    "rms": "You are a strict evaluator for a cybersecurity benchmark. Your role has TWO steps.\n\nQuestion:\n{question}\n\nCorrect Answer: {ground_truth}\n\nModel's Response:\n{model_answer}\n\nSTEP 1 — EXTRACT the model's answer.\n- Look for the model's explicit final answer (e.g., \"Answer:\", \"Final answer:\", concluding line, single bolded line at top).\n- IGNORE letters/IDs/text that appear only inside explanations of other options or thinking-aloud prose.\n- If the model gives multiple inconsistent answers, use its most prominent/final selection.\n- DO NOT correct, infer, or improve the model's answer — extract verbatim what it actually said.\n- Format the extracted answer as: comma-separated sorted MITRE mitigation IDs in form \"MNNNN\", e.g. \"M1018,M1026,M1047\". If no valid mitigation was given, output \"NONE\".\n\nSTEP 2 — VERDICT.\nVerdict is CORRECT only if the extracted set of mitigation IDs equals the correct set exactly (case-insensitive, order ignored). Partial/missing/extra IDs are INCORRECT.\n\nOutput ONLY this JSON, nothing else:\n{\n  \"extracted_answer\": \"<your extraction in the format above>\",\n  \"verdict\": \"CORRECT\" or \"INCORRECT\",\n  \"justification\": \"<one short sentence explaining what you extracted and why the verdict>\"\n}\n\nYour judgment:",
+    "taa": "You are a strict evaluator for a cybersecurity benchmark. Your role has TWO steps.\n\nQuestion:\n{question}\n\nCorrect Answer: {ground_truth}\n\nModel's Response:\n{model_answer}\n\nSTEP 1 — EXTRACT the model's answer.\n- Look for the model's explicit final answer (e.g., \"Answer:\", \"Final answer:\", concluding line, single bolded line at top).\n- IGNORE letters/IDs/text that appear only inside explanations of other options or thinking-aloud prose.\n- If the model gives multiple inconsistent answers, use its most prominent/final selection.\n- DO NOT correct, infer, or improve the model's answer — extract verbatim what it actually said.\n- Format the extracted answer as: the threat actor name as the model gave it, in canonical form (most common name). If no actor was given, output \"NONE\".\n\nSTEP 2 — VERDICT.\nVerdict is CORRECT if the extracted actor name refers to the same threat actor as the correct answer (case-insensitive; common aliases are equivalent, e.g. \"APT28\" ≡ \"Fancy Bear\", \"Lazarus\" ≡ \"Lazarus Group\"). Otherwise INCORRECT.\n\nOutput ONLY this JSON, nothing else:\n{\n  \"extracted_answer\": \"<your extraction in the format above>\",\n  \"verdict\": \"CORRECT\" or \"INCORRECT\",\n  \"justification\": \"<one short sentence explaining what you extracted and why the verdict>\"\n}\n\nYour judgment:",
+    "cti_taa": "You are a strict evaluator for a cybersecurity benchmark. Your role has TWO steps.\n\nQuestion:\n{question}\n\nCorrect Answer: {ground_truth}\n\nModel's Response:\n{model_answer}\n\nSTEP 1 — EXTRACT the model's answer.\n- Look for the model's explicit final answer (e.g., \"Answer:\", \"Final answer:\", concluding line, single bolded line at top).\n- IGNORE letters/IDs/text that appear only inside explanations of other options or thinking-aloud prose.\n- If the model gives multiple inconsistent answers, use its most prominent/final selection.\n- DO NOT correct, infer, or improve the model's answer — extract verbatim what it actually said.\n- Format the extracted answer as: the threat actor name as the model gave it, in canonical form (most common name). If no actor was given, output \"NONE\".\n\nSTEP 2 — VERDICT.\nVerdict is CORRECT if the extracted actor name refers to the same threat actor as the correct answer (case-insensitive; common aliases are equivalent, e.g. \"APT28\" ≡ \"Fancy Bear\", \"Lazarus\" ≡ \"Lazarus Group\"). Otherwise INCORRECT.\n\nOutput ONLY this JSON, nothing else:\n{\n  \"extracted_answer\": \"<your extraction in the format above>\",\n  \"verdict\": \"CORRECT\" or \"INCORRECT\",\n  \"justification\": \"<one short sentence explaining what you extracted and why the verdict>\"\n}\n\nYour judgment:",
+    "mcq": "You are a strict evaluator for a cybersecurity benchmark. Your role has TWO steps.\n\nQuestion:\n{question}\n\nAnswer Choices:\n{choices}\n\nCorrect Answer: {ground_truth}\n\nModel's Response:\n{model_answer}\n\nSTEP 1 — EXTRACT the model's answer.\n- Look for the model's explicit final answer (e.g., \"Answer:\", \"Final answer:\", concluding line, single bolded line at top).\n- IGNORE letters/IDs/text that appear only inside explanations of other options or thinking-aloud prose.\n- If the model gives multiple inconsistent answers, use its most prominent/final selection.\n- DO NOT correct, infer, or improve the model's answer — extract verbatim what it actually said.\n- Format the extracted answer as: a single uppercase letter (A, B, C, D, or E)\n\nSTEP 2 — VERDICT.\nVerdict is CORRECT if the extracted letter equals the correct answer (case-insensitive). Otherwise INCORRECT.\n\nOutput ONLY this JSON, nothing else:\n{\n  \"extracted_answer\": \"<your extraction in the format above>\",\n  \"verdict\": \"CORRECT\" or \"INCORRECT\",\n  \"justification\": \"<one short sentence explaining what you extracted and why the verdict>\"\n}\n\nYour judgment:",
+    "athena_ate": "You are a strict evaluator for a cybersecurity benchmark. Your role has TWO steps.\n\nQuestion:\n{question}\n\nCorrect Answer: {ground_truth}\n\nModel's Response:\n{model_answer}\n\nSTEP 1 — EXTRACT the model's answer.\n- Look for the model's explicit final answer (e.g., \"Answer:\", \"Final answer:\", concluding line, single bolded line at top).\n- IGNORE letters/IDs/text that appear only inside explanations of other options or thinking-aloud prose.\n- If the model gives multiple inconsistent answers, use its most prominent/final selection.\n- DO NOT correct, infer, or improve the model's answer — extract verbatim what it actually said.\n- Format the extracted answer as: comma-separated sorted PARENT MITRE ATT&CK technique IDs, e.g. \"T1027,T1059\". IMPORTANT: strip any subtechnique suffix — \"T1059.001\" must become \"T1059\". Output ONLY parent IDs (uppercase T followed by 4 digits, no dot). If no valid technique was given, output \"NONE\".\n\nSTEP 2 — VERDICT.\nVerdict is CORRECT only if the extracted set of PARENT technique IDs equals the correct set of parent IDs exactly. Always strip subtechnique suffixes from BOTH extracted and ground truth before comparing (\"T1059.001\" → \"T1059\"). Partial/missing/extra parent IDs are INCORRECT.\n\nOutput ONLY this JSON, nothing else:\n{\n  \"extracted_answer\": \"<your extraction in the format above>\",\n  \"verdict\": \"CORRECT\" or \"INCORRECT\",\n  \"justification\": \"<one short sentence explaining what you extracted and why the verdict>\"\n}\n\nYour judgment:",
+    "athena_rcm": "You are a strict evaluator for a cybersecurity benchmark. Your role has TWO steps.\n\nQuestion:\n{question}\n\nCorrect Answer: {ground_truth}\n\nModel's Response:\n{model_answer}\n\nSTEP 1 — EXTRACT the model's answer.\n- Look for the model's explicit final answer (e.g., \"Answer:\", \"Final answer:\", concluding line, single bolded line at top).\n- IGNORE letters/IDs/text that appear only inside explanations of other options or thinking-aloud prose.\n- If the model gives multiple inconsistent answers, use its most prominent/final selection.\n- DO NOT correct, infer, or improve the model's answer — extract verbatim what it actually said.\n- Format the extracted answer as: comma-separated sorted CWE IDs in canonical form \"CWE-NNN\", e.g. \"CWE-79\" or \"CWE-79,CWE-89\". If no valid CWE was given, output \"NONE\".\n\nSTEP 2 — VERDICT.\nVerdict is CORRECT only if the extracted CWE-ID set equals the correct CWE-ID set exactly (treat \"CWE-79\", \"cwe-79\", \"79\" as equivalent — same numeric ID). Partial/missing/extra IDs are INCORRECT.\n\nOutput ONLY this JSON, nothing else:\n{\n  \"extracted_answer\": \"<your extraction in the format above>\",\n  \"verdict\": \"CORRECT\" or \"INCORRECT\",\n  \"justification\": \"<one short sentence explaining what you extracted and why the verdict>\"\n}\n\nYour judgment:",
+    "athena_vsp": "You are a strict evaluator for a cybersecurity benchmark. Your role has TWO steps.\n\nQuestion:\n{question}\n\nCorrect Answer: {ground_truth}\n\nModel's Response:\n{model_answer}\n\nSTEP 1 — EXTRACT the model's answer.\n- Look for the model's explicit final answer (e.g., \"Answer:\", \"Final answer:\", concluding line, single bolded line at top).\n- IGNORE letters/IDs/text that appear only inside explanations of other options or thinking-aloud prose.\n- If the model gives multiple inconsistent answers, use its most prominent/final selection.\n- DO NOT correct, infer, or improve the model's answer — extract verbatim what it actually said.\n- Format the extracted answer as: a CVSS v3.1 vector string starting with \"CVSS:3.1/\", e.g. \"CVSS:3.1/AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:H\". If the model started with \"CVSS:3.0/\" change it to \"CVSS:3.1/\". If no vector prefix is present, prepend \"CVSS:3.1/\". If no valid CVSS vector is found, output \"NONE\".\n\nSTEP 2 — VERDICT.\nVerdict is CORRECT if the extracted vector equals the correct vector after case-insensitive normalization and prefix normalization (CVSS:3.0/ ≡ CVSS:3.1/). Otherwise INCORRECT.\n\nOutput ONLY this JSON, nothing else:\n{\n  \"extracted_answer\": \"<your extraction in the format above>\",\n  \"verdict\": \"CORRECT\" or \"INCORRECT\",\n  \"justification\": \"<one short sentence explaining what you extracted and why the verdict>\"\n}\n\nYour judgment:",
+    "secure_maet": "You are a strict evaluator for a cybersecurity benchmark. Your role has TWO steps.\n\nQuestion:\n{question}\n\nAnswer Choices:\n{choices}\n\nCorrect Answer: {ground_truth}\n\nModel's Response:\n{model_answer}\n\nSTEP 1 — EXTRACT the model's answer.\n- Look for the model's explicit final answer (e.g., \"Answer:\", \"Final answer:\", concluding line, single bolded line at top).\n- IGNORE letters/IDs/text that appear only inside explanations of other options or thinking-aloud prose.\n- If the model gives multiple inconsistent answers, use its most prominent/final selection.\n- DO NOT correct, infer, or improve the model's answer — extract verbatim what it actually said.\n- Format the extracted answer as: a single uppercase letter (A, B, C, D, or E)\n\nSTEP 2 — VERDICT.\nVerdict is CORRECT if the extracted letter equals the correct answer (case-insensitive). Otherwise INCORRECT.\n\nOutput ONLY this JSON, nothing else:\n{\n  \"extracted_answer\": \"<your extraction in the format above>\",\n  \"verdict\": \"CORRECT\" or \"INCORRECT\",\n  \"justification\": \"<one short sentence explaining what you extracted and why the verdict>\"\n}\n\nYour judgment:",
+    "secure_cwet": "You are a strict evaluator for a cybersecurity benchmark. Your role has TWO steps.\n\nQuestion:\n{question}\n\nAnswer Choices:\n{choices}\n\nCorrect Answer: {ground_truth}\n\nModel's Response:\n{model_answer}\n\nSTEP 1 — EXTRACT the model's answer.\n- Look for the model's explicit final answer (e.g., \"Answer:\", \"Final answer:\", concluding line, single bolded line at top).\n- IGNORE letters/IDs/text that appear only inside explanations of other options or thinking-aloud prose.\n- If the model gives multiple inconsistent answers, use its most prominent/final selection.\n- DO NOT correct, infer, or improve the model's answer — extract verbatim what it actually said.\n- Format the extracted answer as: a single uppercase letter (A, B, C, D, or E)\n\nSTEP 2 — VERDICT.\nVerdict is CORRECT if the extracted letter equals the correct answer (case-insensitive). Otherwise INCORRECT.\n\nOutput ONLY this JSON, nothing else:\n{\n  \"extracted_answer\": \"<your extraction in the format above>\",\n  \"verdict\": \"CORRECT\" or \"INCORRECT\",\n  \"justification\": \"<one short sentence explaining what you extracted and why the verdict>\"\n}\n\nYour judgment:",
+    "secure_kcv": "You are a strict evaluator for a cybersecurity benchmark. Your role has TWO steps.\n\nQuestion:\n{question}\n\nCorrect Answer: {ground_truth}\n\nModel's Response:\n{model_answer}\n\nSTEP 1 — EXTRACT the model's answer.\n- Look for the model's explicit final answer (e.g., \"Answer:\", \"Final answer:\", concluding line, single bolded line at top).\n- IGNORE letters/IDs/text that appear only inside explanations of other options or thinking-aloud prose.\n- If the model gives multiple inconsistent answers, use its most prominent/final selection.\n- DO NOT correct, infer, or improve the model's answer — extract verbatim what it actually said.\n- Format the extracted answer as: a single uppercase letter: T (true) or F (false); or X when the model explicitly answers that it does not know / cannot be determined. This is a True/False verification task, not multiple choice. If the response contains no discernible answer at all, output \"NONE\".\n\nSTEP 2 — VERDICT.\nVerdict is CORRECT if the extracted letter (T, F, or X) equals the correct answer (case-insensitive). \"NONE\" is never a valid answer and is always INCORRECT.\n\nOutput ONLY this JSON, nothing else:\n{\n  \"extracted_answer\": \"<your extraction in the format above>\",\n  \"verdict\": \"CORRECT\" or \"INCORRECT\",\n  \"justification\": \"<one short sentence explaining what you extracted and why the verdict>\"\n}\n\nYour judgment:",
+    "redsage_frameworks": "You are a strict evaluator for a cybersecurity benchmark. Your role has TWO steps.\n\nQuestion:\n{question}\n\nAnswer Choices:\n{choices}\n\nCorrect Answer: {ground_truth}\n\nModel's Response:\n{model_answer}\n\nSTEP 1 — EXTRACT the model's answer.\n- Look for the model's explicit final answer (e.g., \"Answer:\", \"Final answer:\", concluding line, single bolded line at top).\n- IGNORE letters/IDs/text that appear only inside explanations of other options or thinking-aloud prose.\n- If the model gives multiple inconsistent answers, use its most prominent/final selection.\n- DO NOT correct, infer, or improve the model's answer — extract verbatim what it actually said.\n- Format the extracted answer as: a single uppercase letter (A, B, C, D, or E)\n\nSTEP 2 — VERDICT.\nVerdict is CORRECT if the extracted letter equals the correct answer (case-insensitive). Otherwise INCORRECT.\n\nOutput ONLY this JSON, nothing else:\n{\n  \"extracted_answer\": \"<your extraction in the format above>\",\n  \"verdict\": \"CORRECT\" or \"INCORRECT\",\n  \"justification\": \"<one short sentence explaining what you extracted and why the verdict>\"\n}\n\nYour judgment:",
+    "redsage_generals": "You are a strict evaluator for a cybersecurity benchmark. Your role has TWO steps.\n\nQuestion:\n{question}\n\nAnswer Choices:\n{choices}\n\nCorrect Answer: {ground_truth}\n\nModel's Response:\n{model_answer}\n\nSTEP 1 — EXTRACT the model's answer.\n- Look for the model's explicit final answer (e.g., \"Answer:\", \"Final answer:\", concluding line, single bolded line at top).\n- IGNORE letters/IDs/text that appear only inside explanations of other options or thinking-aloud prose.\n- If the model gives multiple inconsistent answers, use its most prominent/final selection.\n- DO NOT correct, infer, or improve the model's answer — extract verbatim what it actually said.\n- Format the extracted answer as: a single uppercase letter (A, B, C, D, or E)\n\nSTEP 2 — VERDICT.\nVerdict is CORRECT if the extracted letter equals the correct answer (case-insensitive). Otherwise INCORRECT.\n\nOutput ONLY this JSON, nothing else:\n{\n  \"extracted_answer\": \"<your extraction in the format above>\",\n  \"verdict\": \"CORRECT\" or \"INCORRECT\",\n  \"justification\": \"<one short sentence explaining what you extracted and why the verdict>\"\n}\n\nYour judgment:",
+    "redsage_skills": "You are a strict evaluator for a cybersecurity benchmark. Your role has TWO steps.\n\nQuestion:\n{question}\n\nAnswer Choices:\n{choices}\n\nCorrect Answer: {ground_truth}\n\nModel's Response:\n{model_answer}\n\nSTEP 1 — EXTRACT the model's answer.\n- Look for the model's explicit final answer (e.g., \"Answer:\", \"Final answer:\", concluding line, single bolded line at top).\n- IGNORE letters/IDs/text that appear only inside explanations of other options or thinking-aloud prose.\n- If the model gives multiple inconsistent answers, use its most prominent/final selection.\n- DO NOT correct, infer, or improve the model's answer — extract verbatim what it actually said.\n- Format the extracted answer as: a single uppercase letter (A, B, C, D, or E)\n\nSTEP 2 — VERDICT.\nVerdict is CORRECT if the extracted letter equals the correct answer (case-insensitive). Otherwise INCORRECT.\n\nOutput ONLY this JSON, nothing else:\n{\n  \"extracted_answer\": \"<your extraction in the format above>\",\n  \"verdict\": \"CORRECT\" or \"INCORRECT\",\n  \"justification\": \"<one short sentence explaining what you extracted and why the verdict>\"\n}\n\nYour judgment:",
+    "redsage_cli": "You are a strict evaluator for a cybersecurity benchmark. Your role has TWO steps.\n\nQuestion:\n{question}\n\nAnswer Choices:\n{choices}\n\nCorrect Answer: {ground_truth}\n\nModel's Response:\n{model_answer}\n\nSTEP 1 — EXTRACT the model's answer.\n- Look for the model's explicit final answer (e.g., \"Answer:\", \"Final answer:\", concluding line, single bolded line at top).\n- IGNORE letters/IDs/text that appear only inside explanations of other options or thinking-aloud prose.\n- If the model gives multiple inconsistent answers, use its most prominent/final selection.\n- DO NOT correct, infer, or improve the model's answer — extract verbatim what it actually said.\n- Format the extracted answer as: a single uppercase letter (A, B, C, D, or E)\n\nSTEP 2 — VERDICT.\nVerdict is CORRECT if the extracted letter equals the correct answer (case-insensitive). Otherwise INCORRECT.\n\nOutput ONLY this JSON, nothing else:\n{\n  \"extracted_answer\": \"<your extraction in the format above>\",\n  \"verdict\": \"CORRECT\" or \"INCORRECT\",\n  \"justification\": \"<one short sentence explaining what you extracted and why the verdict>\"\n}\n\nYour judgment:",
+    "redsage_kali": "You are a strict evaluator for a cybersecurity benchmark. Your role has TWO steps.\n\nQuestion:\n{question}\n\nAnswer Choices:\n{choices}\n\nCorrect Answer: {ground_truth}\n\nModel's Response:\n{model_answer}\n\nSTEP 1 — EXTRACT the model's answer.\n- Look for the model's explicit final answer (e.g., \"Answer:\", \"Final answer:\", concluding line, single bolded line at top).\n- IGNORE letters/IDs/text that appear only inside explanations of other options or thinking-aloud prose.\n- If the model gives multiple inconsistent answers, use its most prominent/final selection.\n- DO NOT correct, infer, or improve the model's answer — extract verbatim what it actually said.\n- Format the extracted answer as: a single uppercase letter (A, B, C, D, or E)\n\nSTEP 2 — VERDICT.\nVerdict is CORRECT if the extracted letter equals the correct answer (case-insensitive). Otherwise INCORRECT.\n\nOutput ONLY this JSON, nothing else:\n{\n  \"extracted_answer\": \"<your extraction in the format above>\",\n  \"verdict\": \"CORRECT\" or \"INCORRECT\",\n  \"justification\": \"<one short sentence explaining what you extracted and why the verdict>\"\n}\n\nYour judgment:",
+    "cybermetric": "You are a strict evaluator for a cybersecurity benchmark. Your role has TWO steps.\n\nQuestion:\n{question}\n\nAnswer Choices:\n{choices}\n\nCorrect Answer: {ground_truth}\n\nModel's Response:\n{model_answer}\n\nSTEP 1 — EXTRACT the model's answer.\n- Look for the model's explicit final answer (e.g., \"Answer:\", \"Final answer:\", concluding line, single bolded line at top).\n- IGNORE letters/IDs/text that appear only inside explanations of other options or thinking-aloud prose.\n- If the model gives multiple inconsistent answers, use its most prominent/final selection.\n- DO NOT correct, infer, or improve the model's answer — extract verbatim what it actually said.\n- Format the extracted answer as: a single uppercase letter (A, B, C, D, or E)\n\nSTEP 2 — VERDICT.\nVerdict is CORRECT if the extracted letter equals the correct answer (case-insensitive). Otherwise INCORRECT.\n\nOutput ONLY this JSON, nothing else:\n{\n  \"extracted_answer\": \"<your extraction in the format above>\",\n  \"verdict\": \"CORRECT\" or \"INCORRECT\",\n  \"justification\": \"<one short sentence explaining what you extracted and why the verdict>\"\n}\n\nYour judgment:",
+    "mmlu-cs": "You are a strict evaluator for a cybersecurity benchmark. Your role has TWO steps.\n\nQuestion:\n{question}\n\nAnswer Choices:\n{choices}\n\nCorrect Answer: {ground_truth}\n\nModel's Response:\n{model_answer}\n\nSTEP 1 — EXTRACT the model's answer.\n- Look for the model's explicit final answer (e.g., \"Answer:\", \"Final answer:\", concluding line, single bolded line at top).\n- IGNORE letters/IDs/text that appear only inside explanations of other options or thinking-aloud prose.\n- If the model gives multiple inconsistent answers, use its most prominent/final selection.\n- DO NOT correct, infer, or improve the model's answer — extract verbatim what it actually said.\n- Format the extracted answer as: a single uppercase letter (A, B, C, D, or E)\n\nSTEP 2 — VERDICT.\nVerdict is CORRECT if the extracted letter equals the correct answer (case-insensitive). Otherwise INCORRECT.\n\nOutput ONLY this JSON, nothing else:\n{\n  \"extracted_answer\": \"<your extraction in the format above>\",\n  \"verdict\": \"CORRECT\" or \"INCORRECT\",\n  \"justification\": \"<one short sentence explaining what you extracted and why the verdict>\"\n}\n\nYour judgment:",
+    "secbench": "You are a strict evaluator for a cybersecurity benchmark. Your role has TWO steps.\n\nQuestion:\n{question}\n\nAnswer Choices:\n{choices}\n\nCorrect Answer: {ground_truth}\n\nModel's Response:\n{model_answer}\n\nSTEP 1 — EXTRACT the model's answer.\n- Look for the model's explicit final answer (e.g., \"Answer:\", \"Final answer:\", concluding line, single bolded line at top).\n- IGNORE letters/IDs/text that appear only inside explanations of other options or thinking-aloud prose.\n- If the model gives multiple inconsistent answers, use its most prominent/final selection.\n- DO NOT correct, infer, or improve the model's answer — extract verbatim what it actually said.\n- Format the extracted answer as: a single uppercase letter (A, B, C, D, or E)\n\nSTEP 2 — VERDICT.\nVerdict is CORRECT if the extracted letter equals the correct answer (case-insensitive). Otherwise INCORRECT.\n\nOutput ONLY this JSON, nothing else:\n{\n  \"extracted_answer\": \"<your extraction in the format above>\",\n  \"verdict\": \"CORRECT\" or \"INCORRECT\",\n  \"justification\": \"<one short sentence explaining what you extracted and why the verdict>\"\n}\n\nYour judgment:",
+    "seceval": "You are a strict evaluator for a cybersecurity benchmark. Your role has TWO steps.\n\nQuestion:\n{question}\n\nCorrect Answer: {ground_truth}\n\nModel's Response:\n{model_answer}\n\nSTEP 1 — EXTRACT the model's answer.\n- Look for the model's explicit final answer (e.g., \"Answer:\", \"Final answer:\", concluding line, single bolded line at top).\n- IGNORE letters/IDs/text that appear only inside explanations of other options or thinking-aloud prose.\n- If the model gives multiple inconsistent answers, use its most prominent/final selection.\n- DO NOT correct, infer, or improve the model's answer — extract verbatim what it actually said.\n- Format the extracted answer as: uppercase letters concatenated and sorted alphabetically, e.g. \"B\" or \"AB\" or \"ACD\". If the model gave no clear answer, output \"NONE\".\n\nSTEP 2 — VERDICT.\nVerdict is CORRECT only if the extracted set of letters equals the correct set exactly (case-insensitive, order ignored). Partial matches are INCORRECT: e.g. correct=\"ABC\" → \"ABC\" CORRECT; \"AB\" INCORRECT (missing); \"ABCD\" INCORRECT (extra).\n\nOutput ONLY this JSON, nothing else:\n{\n  \"extracted_answer\": \"<your extraction in the format above>\",\n  \"verdict\": \"CORRECT\" or \"INCORRECT\",\n  \"justification\": \"<one short sentence explaining what you extracted and why the verdict>\"\n}\n\nYour judgment:",
+    "sevenllm": "You are a strict evaluator for a cybersecurity benchmark. Your role has TWO steps.\n\nQuestion:\n{question}\n\nCorrect Answer: {ground_truth}\n\nModel's Response:\n{model_answer}\n\nSTEP 1 — EXTRACT the model's answer.\n- Look for the model's explicit final answer (e.g., \"Answer:\", \"Final answer:\", concluding line, single bolded line at top).\n- IGNORE letters/IDs/text that appear only inside explanations of other options or thinking-aloud prose.\n- If the model gives multiple inconsistent answers, use its most prominent/final selection.\n- DO NOT correct, infer, or improve the model's answer — extract verbatim what it actually said.\n- Format the extracted answer as: a concise single-line summary (≤300 chars) of the FACTS the model extracted or generated. For information-extraction tasks (JSON output): list the key entities/values the model produced as \"field: value; field: value\" pairs (e.g., \"Malware: Dridex; capabilities: payload drop, ransomware; evasion: password-protected Excel\"). For analysis-generation tasks (text output): a one-sentence paraphrase of the model's main claim. If the model gave no usable answer (empty, refusal, garbage), output \"NONE\".\n\nSTEP 2 — VERDICT.\nThis is a SEVENLLM cybersecurity information-extraction (JSON output) or analysis-generation (text output) task. The instruction shown to the model in the Question block specifies which category (e.g. Malware Feature Extraction, Threat Analysis, Time Element Acquisition). Compare the extracted answer to the correct answer SEMANTICALLY, not by schema or wording:\n- The model's JSON schema may legitimately differ from the ground-truth schema (different key names, different nesting). What matters is whether the same factual entities/values are captured.\n- Treat common aliases and abbreviations as equivalent (e.g. \"US\" ≡ \"United States\", \"AES-256\" ≡ \"AES\", semantically-similar phrasings).\n- Verdict is CORRECT if the model captures the CENTRAL facts of the correct answer (main entity, primary list, key claim) with no contradictions on those central facts and no major fabricated entities. Missing peripheral details are OK.\n- Verdict is INCORRECT if the model misses the central facts, contradicts the ground truth on a key entity/value, or hallucinates major entities not supported by the source.\nBe lenient on phrasing and schema, strict on factual coverage of the central facts.\n\nOutput ONLY this JSON, nothing else:\n{\n  \"extracted_answer\": \"<your extraction in the format above>\",\n  \"verdict\": \"CORRECT\" or \"INCORRECT\",\n  \"justification\": \"<one short sentence explaining what you extracted and why the verdict>\"\n}\n\nYour judgment:"
+  },
+  "sayf_eval_version": "0.1.2",
+  "schema_version": "1.1",
+  "created_at": "2026-08-24T12:00:00+00:00"
+}
