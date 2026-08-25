@@ -31,7 +31,7 @@ def test_render_table_matches_committed_readme():
         [sys.executable, str(LB / "render_table.py"), "leaderboard"],
         cwd=ROOT,
         capture_output=True,
-        text=True,
+        encoding="utf-8",  # decode the renderer's non-ASCII glyphs regardless of locale
         check=True,
     ).stdout.rstrip("\n")
     committed = _generated_block((LB / "README.md").read_text(encoding="utf-8"))
