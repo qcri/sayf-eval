@@ -9,7 +9,7 @@ not trigger downloads.
 Most tasks come from two factories — :func:`make_hf_loader` (RISys-Lab HF mirror:
 CTI MCQ/RCM/VSP/ATE, SECURE, SecBench, RedSage) and :func:`make_athena_loader`
 (AthenaBench GitHub JSONL) — plus dedicated loaders for the few benchmarks with
-bespoke prompt formats (SecEval, MMLU-CS 5-shot, CyberMetric, CISSP, CTI-TAA TSV).
+bespoke prompt formats (SecEval, MMLU-CS 5-shot, CyberMetric, CTI-TAA TSV).
 """
 
 from __future__ import annotations
@@ -17,7 +17,6 @@ from __future__ import annotations
 import csv
 import io
 import json
-import os
 import re
 import urllib.request
 from collections.abc import Callable
@@ -466,67 +465,6 @@ def load_cybermetric() -> list[Sample]:
                 target=gt,
                 choices=_choices_to_list(answers),
                 metadata={"task_type": "mcq", "subset": "cyberMetric_500"},
-            )
-        )
-    return samples
-
-
-# -- CISSP (local/remote JSON; path via SAYF_EVAL_CISSP_PATH) ------------------
-
-
-def load_cissp() -> list[Sample]:
-    path = os.environ.get("SAYF_EVAL_CISSP_PATH")
-    if not path:
-        raise ValueError(
-            "CISSP dataset path required — set SAYF_EVAL_CISSP_PATH to a local JSON "
-            "file or URL (the CISSP set is not a public HF dataset)."
-        )
-    if path.startswith("http"):
-        data = json.loads(_http_get(path).decode("utf-8"))
-    else:
-        with open(path) as f:
-            data = json.load(f)
-    if isinstance(data, list):
-        questions = data
-    elif isinstance(data, dict):
-        questions = data.get("questions") or data.get("items") or data.get("data") or []
-    else:
-        questions = []
-
-    samples: list[Sample] = []
-    for idx, q in enumerate(questions):
-        question = q.get("question") or q.get("Prompt") or ""
-        if not question:
-            continue
-        choices: dict = {}
-        if isinstance(q.get("answers"), dict):
-            choices = q["answers"]
-        elif isinstance(q.get("options"), list):
-            choices = {chr(65 + i): c for i, c in enumerate(q["options"][:4])}
-        elif isinstance(q.get("options"), dict):
-            choices = q["options"]
-        elif isinstance(q.get("choices"), list):
-            choices = {chr(65 + i): c for i, c in enumerate(q["choices"][:4])}
-        else:
-            choices = {L: q[L] for L in ["A", "B", "C", "D"] if L in q}
-        gt = ""
-        for key in ["solution", "answer", "GT", "correct_answer"]:
-            if key in q:
-                gt = str(q[key]).strip()
-                break
-        if not choices or not gt:
-            continue
-        prompt = f"{question}\n\n"
-        for label in sorted(choices.keys()):
-            prompt += f"{label}. {choices[label]}\n"
-        prompt += "\nAnswer with the letter only:"
-        samples.append(
-            Sample(
-                index=idx,
-                prompt=prompt,
-                target=gt,
-                choices=_choices_to_list(choices),
-                metadata={"task_type": "mcq", "domain": q.get("domain", "")},
             )
         )
     return samples

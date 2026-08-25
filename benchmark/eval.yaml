@@ -7,7 +7,6 @@ tasks:
 - id: athena_ate
 - id: athena_rcm
 - id: athena_vsp
-- id: cissp
 - id: ckt
 - id: cti_taa
 - id: cybermetric

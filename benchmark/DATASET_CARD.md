@@ -22,7 +22,7 @@ sub-tasks across 9 benchmark families** into per-task leaderboards.
 | AthenaBench | `ckt`, `rms`, `taa`, `athena_ate`, `athena_rcm`, `athena_vsp` |
 | SECURE (ICS/OT) | `secure_maet`, `secure_cwet`, `secure_kcv` |
 | RedSage | `redsage_frameworks`, `redsage_generals`, `redsage_skills`, `redsage_cli`, `redsage_kali` |
-| SecEval · CyberMetric · SecBench · MMLU-CS · CISSP | MCQ knowledge |
+| SecEval · CyberMetric · SecBench · MMLU-CS | MCQ knowledge |
 | SEvenLLM | `sevenllm` (open-ended structured CTI extraction) |
 
 ## How scores are produced (and why the pipeline travels with them)

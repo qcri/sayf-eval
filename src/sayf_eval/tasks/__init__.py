@@ -1,7 +1,7 @@
 """Task registrations. Importing this package populates the registry.
 
-Covers the full 25-task suite: CTI-Bench (HF + TSV), AthenaBench (JSONL),
-SECURE, SecEval, CyberMetric, SecBench, MMLU-CS, RedSage, CISSP, SEvenLLM.
+Covers the full 24-task suite: CTI-Bench (HF + TSV), AthenaBench (JSONL),
+SECURE, SecEval, CyberMetric, SecBench, MMLU-CS, RedSage, SEvenLLM.
 Per-task token budgets and system prompts follow the original pipeline's
 standardized config.
 """
@@ -39,9 +39,9 @@ _SECURE_ORIG = "https://github.com/aiforsec/SECURE"  # original SECURE (arXiv 24
 _CYBERMETRIC_ORIG = "https://github.com/cybermetric/CyberMetric"  # original CyberMetric (IEEE CSR 2024)
 
 
-# ── Declared dataset provenance (see Task.source). One of three neutral shapes;
-#    downstream exporters (e.g. the Every Eval Ever converter) map these onto
-#    their own source_data schema. ──────────────────────────────────────────────
+# ── Declared dataset provenance (see Task.source). One of two neutral shapes
+#    (HF dataset or URL); downstream exporters (e.g. the Every Eval Ever
+#    converter) map these onto their own source_data schema. ────────────────────
 def _hf_source(repo, subset, name, split="test"):
     src = {"type": "hf_dataset", "dataset_name": name, "hf_repo": repo}
     if subset:
@@ -53,10 +53,6 @@ def _hf_source(repo, subset, name, split="test"):
 
 def _url_source(url, name):
     return {"type": "url", "dataset_name": name, "url": [url]}
-
-
-def _other_source(name):
-    return {"type": "other", "dataset_name": name}
 
 
 def _reg(name, task_type, loader, system_prompt=None, max_tokens=1024, source=None):
@@ -229,8 +225,6 @@ _reg(
     512,
     _hf_source(_MMLU_HF, "computer_security", "MMLU computer_security (5-shot)"),
 )
-# CISSP is not a public dataset; the path is supplied at runtime via env var.
-_reg("cissp", "mcq", ds.load_cissp, None, 1024, _other_source("CISSP (private; SAYF_EVAL_CISSP_PATH)"))
 
 # ── SEvenLLM (open-ended structured CTI extraction / analysis) ────────────────
 # Judged semantically; open-ended JSON/text outputs need a larger budget.
