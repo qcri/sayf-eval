@@ -13,8 +13,6 @@ import sys
 from pathlib import Path
 
 
-LB = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("leaderboard")
-
 # benchmark family -> [(task_key, display, metric_kind)]
 GROUPS = [
     (
@@ -91,16 +89,21 @@ def fmt(v, kind, bold=False):
     return f"**{s}**" if bold else s
 
 
-def main():
+def main(lb=None):
+    # Resolve the leaderboard dir at call time (not import) so importing this
+    # module and calling main() programmatically doesn't pick up unrelated argv.
+    if lb is None:
+        lb = Path(sys.argv[1]) if len(sys.argv) > 1 else Path("leaderboard")
+    lb = Path(lb)
     # Records are written UTF-8 (see save_record); read/emit UTF-8 explicitly so
     # the non-ASCII glyphs (≡, —, ↓, ×, ·) survive a non-UTF-8 locale (LANG=C).
     if hasattr(sys.stdout, "reconfigure"):
         sys.stdout.reconfigure(encoding="utf-8")
-    idx = json.loads((LB / "leaderboard.json").read_text(encoding="utf-8"))
+    idx = json.loads((lb / "leaderboard.json").read_text(encoding="utf-8"))
     order = [m["model"] for m in idx["models"]]  # ranked by avg desc
     recs = {}
     for m in idx["models"]:
-        recs[m["model"]] = json.loads((LB / m["record"]).read_text(encoding="utf-8"))
+        recs[m["model"]] = json.loads((lb / m["record"]).read_text(encoding="utf-8"))
     avg = {m["model"]: m["avg_accuracy_pct"] for m in idx["models"]}
     # Derive the headline counts from the data so the caption can't drift.
     n_models = len(order)
@@ -140,9 +143,9 @@ def main():
             out.append(f"| {disp} <sup>{METRIC_SUP[kind]}</sup> | " + " | ".join(cells) + " |")
     # average row
     cells = []
-    best_avg = max(avg.values())
+    best_avg = max(avg.values()) if avg else None
     for m in order:
-        cells.append(fmt(avg[m], "acc", bold=abs(avg[m] - best_avg) < 1e-9))
+        cells.append(fmt(avg[m], "acc", bold=(best_avg is not None and abs(avg[m] - best_avg) < 1e-9)))
     out.append("| **Average** <sup>Acc</sup> | " + " | ".join(cells) + " |")
     out.append("")
     # legend
