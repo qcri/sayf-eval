@@ -11,7 +11,7 @@ sayf_eval = ["py.typed"]
 
 [project]
 name = "sayf-eval"
-version = "0.1.2"
+version = "0.2.0"
 description = "A lightweight, model-agnostic framework for evaluating LLMs on cybersecurity benchmarks."
 readme = "README.md"
 requires-python = ">=3.10"

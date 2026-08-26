@@ -10,6 +10,6 @@ Two layers, kept separate (see PROPOSAL.md):
 from sayf_eval.model import GenParams, Model, Response
 
 
-__version__ = "0.1.2"
+__version__ = "0.2.0"
 
 __all__ = ["GenParams", "Model", "Response", "__version__"]
