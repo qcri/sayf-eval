@@ -34,14 +34,16 @@ _MCQ_INSTRUCTION_SECBENCH = (
 )
 _LETTERS = ["A", "B", "C", "D", "E"]
 
-# Pinned upstream commits. Fetch from an immutable commit, not a mutable default
-# branch, so a run always sees the exact data our leaderboard was computed on and
-# an upstream edit can't silently change what we evaluate. CyberMetric is pinned
-# to the commit matching that data specifically: its main was updated 2026-05-27
-# (3 questions reworded, 2 gold answers changed) after our runs.
+# Pinned upstream commits. Every direct download (GitHub raw + HuggingFace
+# ``resolve``) fetches from an immutable commit, not a mutable default branch, so
+# a run always sees the exact data our leaderboard was computed on and an upstream
+# edit can't silently change what we evaluate. CyberMetric is pinned to the commit
+# matching that data specifically: its main was updated 2026-05-27 (3 questions
+# reworded, 2 gold answers changed) after our runs.
 _CYBERMETRIC_COMMIT = "62cc8a984f4fc1f7279af5f8fbcb8b8e50772f17"  # 2024-12-11
 _SECURE_COMMIT = "fdee58627b4fbf99e6e947611cfd3531cbf6dd96"  # 2024-08-28
 _CTI_BENCH_COMMIT = "ca1cd3463b264e86e1839cdfb9ffcb018c26afc6"  # 2024-08-16
+_SECEVAL_COMMIT = "205dab7b0888a06f4b53ca7d9c7093e1326683e1"  # HF dataset revision, 2023-12-21
 
 
 def _http_get(url: str, timeout: float = 60.0) -> bytes:
@@ -296,7 +298,7 @@ _SECEVAL_FEWSHOT = (
 
 
 def load_seceval() -> list[Sample]:
-    url = "https://huggingface.co/datasets/XuanwuAI/SecEval/resolve/main/questions.json"
+    url = f"https://huggingface.co/datasets/XuanwuAI/SecEval/resolve/{_SECEVAL_COMMIT}/questions.json"
     questions = json.loads(_http_get(url).decode("utf-8"))
     samples: list[Sample] = []
     for idx, q in enumerate(questions):
