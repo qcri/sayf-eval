@@ -34,6 +34,15 @@ _MCQ_INSTRUCTION_SECBENCH = (
 )
 _LETTERS = ["A", "B", "C", "D", "E"]
 
+# Pinned upstream commits. Fetch from an immutable commit, not a mutable default
+# branch, so a run always sees the exact data our leaderboard was computed on and
+# an upstream edit can't silently change what we evaluate. CyberMetric is pinned
+# to the commit matching that data specifically: its main was updated 2026-05-27
+# (3 questions reworded, 2 gold answers changed) after our runs.
+_CYBERMETRIC_COMMIT = "62cc8a984f4fc1f7279af5f8fbcb8b8e50772f17"  # 2024-12-11
+_SECURE_COMMIT = "fdee58627b4fbf99e6e947611cfd3531cbf6dd96"  # 2024-08-28
+_CTI_BENCH_COMMIT = "ca1cd3463b264e86e1839cdfb9ffcb018c26afc6"  # 2024-08-16
+
 
 def _http_get(url: str, timeout: float = 60.0) -> bytes:
     with urllib.request.urlopen(url, timeout=timeout) as r:  # noqa: S310
@@ -196,7 +205,7 @@ def make_secure_orig_loader(task: str, task_type: str) -> Callable[[], list[Samp
     the RISys-Lab mirror (MAET 1067, KCV 461) the content is byte-identical; the
     original additionally includes the items the mirror split into a validation
     split (full original: MAET 1072, KCV 466)."""
-    url = f"https://raw.githubusercontent.com/aiforsec/SECURE/main/Dataset/SECURE%20-%20{task}.tsv"
+    url = f"https://raw.githubusercontent.com/aiforsec/SECURE/{_SECURE_COMMIT}/Dataset/SECURE%20-%20{task}.tsv"
 
     def loader() -> list[Sample]:
         text = _http_get(url).decode("utf-8")
@@ -321,7 +330,7 @@ def load_cti_taa() -> list[Sample]:
     earlier version left ``target=""`` and the judge graded against no gold; we
     restore the real answer key from the authors' evaluation responses.
     """
-    base = "https://raw.githubusercontent.com/xashru/cti-bench/main"
+    base = f"https://raw.githubusercontent.com/xashru/cti-bench/{_CTI_BENCH_COMMIT}"
     data = list(csv.DictReader(io.StringIO(_http_get(f"{base}/data/cti-taa.tsv").decode("utf-8")), delimiter="\t"))
     gold_rows = list(
         csv.DictReader(
@@ -412,12 +421,10 @@ def load_cybermetric() -> list[Sample]:
     """CyberMetric-500 from the ORIGINAL repo (github.com/cybermetric/CyberMetric,
     IEEE CSR 2024), which is canonical. Same {question, answers, solution} schema
     and size (500) as the RISys-Lab mirror, though a few items differ from the
-    mirror; rendering is unchanged."""
-    data = json.loads(
-        _http_get("https://raw.githubusercontent.com/cybermetric/CyberMetric/main/CyberMetric-500-v1.json").decode(
-            "utf-8"
-        )
-    )
+    mirror; rendering is unchanged. Pinned to ``_CYBERMETRIC_COMMIT`` (the version
+    our leaderboard was computed on) — the repo's main was later updated."""
+    url = f"https://raw.githubusercontent.com/cybermetric/CyberMetric/{_CYBERMETRIC_COMMIT}/CyberMetric-500-v1.json"
+    data = json.loads(_http_get(url).decode("utf-8"))
     if isinstance(data, dict):
         rows = data.get("questions")
         if rows is None:
