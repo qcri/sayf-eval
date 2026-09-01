@@ -25,7 +25,9 @@ _HF = "RISys-Lab/Benchmarks_CyberSec_CTI-Bench"
 _SECURE = "RISys-Lab/Benchmarks_CyberSec_SECURE"
 _SECBENCH = "RISys-Lab/Benchmarks_CyberSec_SecBench"
 _REDSAGE = "RISys-Lab/Benchmarks_CyberSec_RedSageMCQ"
-_ATHENA = "https://github.com/Athena-Software-Group/athenabench/raw/main/benchmark"
+# Pinned to an immutable commit (not mutable main) for reproducibility.
+_ATHENA_COMMIT = "a34fb20550c733e13e079ec1947b5fc9578dd7c1"  # 2025-12-03
+_ATHENA = f"https://github.com/Athena-Software-Group/athenabench/raw/{_ATHENA_COMMIT}/benchmark"
 # Bespoke-loader sources (mirror the identifiers used in datasets.py loaders).
 _CYBERMETRIC_HF = "RISys-Lab/Benchmarks_CyberSec_CyberMetrics"
 _SECEVAL_HF = "XuanwuAI/SecEval"
