@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/qcri/sayf-eval/main/assets/sayf-eval2.png" alt="sayf-eval" width="520">
+  <img src="https://raw.githubusercontent.com/qcri/sayf-eval/chore/update-logo/assets/sayf-eval2.png" alt="sayf-eval" width="520">
 </p>
 
 <h1 align="center">sayf-eval</h1>
