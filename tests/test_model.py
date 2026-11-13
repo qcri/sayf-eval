@@ -52,6 +52,12 @@ def test_generate_ok(fake_litellm):
     assert sent["temperature"] == 0.0
 
 
+def test_default_top_p_not_sent():
+    # Anthropic rejects temperature + top_p together; top_p=1.0 is a no-op.
+    assert "top_p" not in GenParams().to_litellm_kwargs()
+    assert GenParams(top_p=0.9).to_litellm_kwargs()["top_p"] == 0.9
+
+
 def test_empty_response_is_not_ok(fake_litellm):
     fake_litellm._next = lambda **kw: _Resp("")
     m = Model("openai/gpt-x", num_retries=1)
