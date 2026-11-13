@@ -45,11 +45,15 @@ class GenParams:
         """Render the params as LiteLLM ``completion`` keyword arguments."""
         kwargs: dict = {
             "temperature": self.temperature,
-            "top_p": self.top_p,
             # Newer param name; LiteLLM maps it to legacy ``max_tokens`` per
             # provider. ``drop_params`` removes it where unsupported.
             "max_completion_tokens": self.max_tokens,
         }
+        # top_p=1.0 is a no-op, so only send it when it narrows sampling.
+        # Recent Anthropic models (e.g. Claude Sonnet 4.6) reject requests that
+        # set both temperature and top_p with HTTP 400.
+        if self.top_p != 1.0:
+            kwargs["top_p"] = self.top_p
         if self.stop:
             kwargs["stop"] = self.stop
         if self.seed is not None:
